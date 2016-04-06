@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>io.takari.m2e.jenkins</groupId>
+    <artifactId>runtime</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>io.takari.m2e.jenkins.runtime</artifactId>
+  <packaging>bundle</packaging>
+  
+  <dependencies>
+    <dependency>
+      <groupId>io.takari.m2e.jenkins</groupId>
+      <artifactId>io.takari.m2e.jenkins.launcher</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.felix</groupId>
+      <artifactId>org.osgi.core</artifactId>
+      <version>1.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+    
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <configuration>
+          <instructions>
+            <Embed-Dependency>
+              *;scope=compile|runtime
+            </Embed-Dependency>
+            <Embed-Directory>jars</Embed-Directory>
+            <_exportcontents>
+              io.takari.m2e.jenkins.runtime,
+              io.takari.m2e.jenkins.launcher.desc
+            </_exportcontents>
+
+            <Import-Package>
+              !*
+            </Import-Package>
+            
+            <Require-Bundle>
+              org.eclipse.osgi
+            </Require-Bundle>
+            
+            <Bundle-ClassPath>.,{maven-dependencies}</Bundle-ClassPath>
+            <Bundle-Activator>io.takari.m2e.jenkins.runtime.JenkinsRuntimePlugin</Bundle-Activator>
+          </instructions>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-p2-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

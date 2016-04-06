@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="io.takari.m2e.jenkins.feature"
+      label="Jenkins Plugin Development Environment"
+      version="0.1.0.qualifier"
+      license-feature="org.eclipse.license"
+      license-feature-version="0.0.0">
+   <install-handler/>
+
+   <includes
+         id="org.jboss.tools.maven.apt.feature"
+         version="0.0.0"
+         search-location="self"/>
+
+   <requires>
+      <import feature="org.jboss.tools.maven.apt.feature" version="1.2.0" match="greaterOrEqual"/>
+   </requires>
+
+   <plugin
+         id="io.takari.m2e.jenkins.plugin"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="io.takari.m2e.jenkins.runtime"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+</feature>
