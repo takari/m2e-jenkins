@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.Model;
@@ -88,18 +89,26 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
           JenkinsPluginProject prj = JenkinsPluginProject.create(art, monitor);
           if (prj != null) {
             deps.add(prj);
-          } else {
-            // when a plugin depends on another plugin, it doesn't specify the
-            // type as hpi or jpi, so we need to resolve its POM to see it
-            File pom = resolveIfNeeded(art.getGroupId(), art.getArtifactId(), art.getVersion(), "pom", mavenProject,
-                monitor);
-            Model depModel = maven.readModel(pom);
+            continue;
+          }
 
-            if (isJenkinsType(depModel.getPackaging())) {
-              File hpi = resolveIfNeeded(art.getGroupId(), art.getArtifactId(), art.getVersion(), "hpi", mavenProject,
-                  monitor);
-              deps.add(new JenkinsPluginArtifact(art.getGroupId(), art.getArtifactId(), art.getVersion(), hpi));
-            }
+          IMavenProjectFacade facade = MavenPlugin.getMavenProjectRegistry().getMavenProject(art.getGroupId(),
+              art.getArtifactId(), art.getVersion());
+          if (facade != null) {
+            // just a plain dependency, skip it
+            continue;
+          }
+
+          // when a plugin depends on another plugin, it doesn't specify the
+          // type as hpi or jpi, so we need to resolve its POM to see it
+          File pom = resolveIfNeeded(art.getGroupId(), art.getArtifactId(), art.getVersion(), "pom", mavenProject,
+              monitor);
+          Model depModel = maven.readModel(pom);
+
+          if (isJenkinsType(depModel.getPackaging())) {
+            File hpi = resolveIfNeeded(art.getGroupId(), art.getArtifactId(), art.getVersion(), "hpi", mavenProject,
+                monitor);
+            deps.add(new JenkinsPluginArtifact(art.getGroupId(), art.getArtifactId(), art.getVersion(), hpi));
           }
         }
         return null;
@@ -114,15 +123,16 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
 
   private File resolveIfNeeded(String groupId, String artifactId, String version, String type, MavenProject project,
       IProgressMonitor monitor) throws CoreException {
+
     IMaven maven = MavenPlugin.getMaven();
     File repoBasedir = new File(maven.getLocalRepositoryPath());
 
     String pomLocation = maven.getArtifactPath(maven.getLocalRepository(), groupId, artifactId, version, type, null);
-    File pom = new File(repoBasedir, pomLocation);
+    File file = new File(repoBasedir, pomLocation);
 
     // in most cases it should be there
-    if (pom.exists()) {
-      return pom;
+    if (file.exists()) {
+      return file;
     }
 
     // but if it's not..
@@ -136,13 +146,14 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
 
     String jenkinsWarId = getHPIMojoParameter("test-hpl", "jenkinsWarId", String.class, monitor);
 
-    for (Artifact a : facade.getMavenProject().getArtifacts()) {
+    Set<Artifact> artifacts = facade.getMavenProject().getArtifacts();
+    for (Artifact a : artifacts) {
+      System.out.println(a.toString());
       boolean match;
       if (jenkinsWarId != null)
         match = (a.getGroupId() + ':' + a.getArtifactId()).equals(jenkinsWarId);
       else
-        match = (a.getArtifactId().equals("jenkins-war") || a.getArtifactId().equals("hudson-war"))
-            && a.getType().equals("war");
+        match = a.getArtifactId().equals("jenkins-war") || a.getArtifactId().equals("hudson-war");
       if (match) {
         IMavenProjectFacade warProject = MavenPlugin.getMavenProjectRegistry().getMavenProject(a.getGroupId(),
             a.getArtifactId(), a.getVersion());
