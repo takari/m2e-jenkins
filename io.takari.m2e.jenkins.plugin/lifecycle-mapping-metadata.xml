@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <lifecycleMappingMetadata>
   <pluginExecutions>
+    <!-- override test-hpl config to perform additional project configuration -->
     <pluginExecution>
       <pluginExecutionFilter>
         <groupId>org.jenkins-ci.tools</groupId>
@@ -14,6 +15,27 @@
         <configurator>
           <id>io.takari.m2e.jenkins.plugin.configurator</id>
         </configurator>
+      </action>
+    </pluginExecution>
+    
+    <!-- maven-hpi-plugin includes that since 1.87 -->
+    <pluginExecution>
+      <pluginExecutionFilter>
+        <groupId>org.jenkins-ci.tools</groupId>
+        <artifactId>maven-hpi-plugin</artifactId>
+        <versionRange>[1.0,1.87)</versionRange>
+        <goals>
+          <goal>insert-test</goal>
+          <goal>resolve-test-dependencies</goal>
+          <goal>validate</goal>
+        </goals>
+      </pluginExecutionFilter>
+      <action>
+        <!-- <ignore /> -->
+        <execute>
+          <runOnIncremental>false</runOnIncremental>
+          <runOnConfiguration>true</runOnConfiguration>
+        </execute>
       </action>
     </pluginExecution>
     <pluginExecution>
