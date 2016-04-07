@@ -28,6 +28,8 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
   private static final String TYPE_JPI = "jpi";
   private static final String HPI_PLUGIN_GROUP_ID = "org.jenkins-ci.tools";
   private static final String HPI_PLUGIN_ARTIFACT_ID = "maven-hpi-plugin";
+  private static final String LOCALIZER_PLUGIN_GROUP_ID = "org.jvnet.localizer";
+  private static final String LOCALIZER_PLUGIN_ARTIFACT_ID = "maven-localizer-plugin";
 
   private IMavenProjectFacade facade;
   private MavenProject mavenProject;
@@ -171,7 +173,18 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
 
   public <T> T getHPIMojoParameter(String goal, String parameter, Class<T> asType, IProgressMonitor monitor)
       throws CoreException {
-    List<MojoExecution> mojoExecutions = facade.getMojoExecutions(HPI_PLUGIN_GROUP_ID, HPI_PLUGIN_ARTIFACT_ID, monitor,
+    return getMojoParameter(HPI_PLUGIN_GROUP_ID, HPI_PLUGIN_ARTIFACT_ID, goal, parameter, asType, monitor);
+  }
+
+  public String getLocalizerOutputDir(IProgressMonitor monitor) throws CoreException {
+    return getMojoParameter(LOCALIZER_PLUGIN_GROUP_ID, LOCALIZER_PLUGIN_ARTIFACT_ID, "generate", "outputDirectory",
+        String.class,
+        monitor);
+  }
+
+  protected <T> T getMojoParameter(String groupId, String artifactId, String goal, String parameter, Class<T> asType,
+      IProgressMonitor monitor) throws CoreException {
+    List<MojoExecution> mojoExecutions = facade.getMojoExecutions(groupId, artifactId, monitor,
         goal);
 
     for (MojoExecution mojoExecution : mojoExecutions) {

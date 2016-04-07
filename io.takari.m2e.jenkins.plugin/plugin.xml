@@ -33,7 +33,14 @@
       <configurator
             class="io.takari.m2e.jenkins.internal.JenkinsProjectConfigurator"
             id="io.takari.m2e.jenkins.plugin.configurator"
-            name="HPI">
+            name="HPI"
+            runsBefore="org.jboss.tools.maven.apt.MavenCompilerAptProjectConfigurator">
+      </configurator>
+      <configurator
+            class="io.takari.m2e.jenkins.internal.JenkinsProjectAptConfigurator"
+            id="io.takari.m2e.jenkins.plugin.aptConfigurator"
+            name="HPI-APT"
+            runsAfter="org.jboss.tools.maven.apt.MavenCompilerAptProjectConfigurator">
       </configurator>
    </extension>
    <extension

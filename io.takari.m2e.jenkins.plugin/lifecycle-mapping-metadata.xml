@@ -8,7 +8,7 @@
         <artifactId>maven-hpi-plugin</artifactId>
         <versionRange>[1.0,)</versionRange>
         <goals>
-          <goal>test-hpl</goal>
+          <goal>validate</goal>
         </goals>
       </pluginExecutionFilter>
       <action>
@@ -17,7 +17,22 @@
         </configurator>
       </action>
     </pluginExecution>
-    
+    <pluginExecution>
+      <pluginExecutionFilter>
+        <groupId>org.jenkins-ci.tools</groupId>
+        <artifactId>maven-hpi-plugin</artifactId>
+        <versionRange>[1.0,)</versionRange>
+        <goals>
+          <goal>test-hpl</goal>
+        </goals>
+      </pluginExecutionFilter>
+      <action>
+        <configurator>
+          <id>io.takari.m2e.jenkins.plugin.aptConfigurator</id>
+        </configurator>
+      </action>
+    </pluginExecution>
+
     <!-- maven-hpi-plugin includes that since 1.87 -->
     <pluginExecution>
       <pluginExecutionFilter>
@@ -32,6 +47,22 @@
       </pluginExecutionFilter>
       <action>
         <!-- <ignore /> -->
+        <execute>
+          <runOnIncremental>false</runOnIncremental>
+          <runOnConfiguration>true</runOnConfiguration>
+        </execute>
+      </action>
+    </pluginExecution>
+    <pluginExecution>
+      <pluginExecutionFilter>
+        <groupId>org.jvnet.localizer</groupId>
+        <artifactId>maven-localizer-plugin</artifactId>
+        <versionRange>[1.0,)</versionRange>
+        <goals>
+          <goal>generate</goal>
+        </goals>
+      </pluginExecutionFilter>
+      <action>
         <execute>
           <runOnIncremental>false</runOnIncremental>
           <runOnConfiguration>true</runOnConfiguration>
