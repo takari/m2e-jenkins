@@ -8,7 +8,7 @@
         <artifactId>maven-hpi-plugin</artifactId>
         <versionRange>[1.0,)</versionRange>
         <goals>
-          <goal>validate</goal>
+          <goal>test-hpl</goal>
         </goals>
       </pluginExecutionFilter>
       <action>
@@ -23,7 +23,7 @@
         <artifactId>maven-hpi-plugin</artifactId>
         <versionRange>[1.0,)</versionRange>
         <goals>
-          <goal>test-hpl</goal>
+          <goal>validate</goal>
         </goals>
       </pluginExecutionFilter>
       <action>

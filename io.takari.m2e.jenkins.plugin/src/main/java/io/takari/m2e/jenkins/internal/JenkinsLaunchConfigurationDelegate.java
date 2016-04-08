@@ -155,6 +155,9 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
         jwar = jw;
       }
 
+      // force regeneration of the file
+      jp.generatePluginFile(monitor);
+
       PluginDesc pd = new PluginDesc();
       pd.setId(jp.getFacade().getArtifactKey().getArtifactId());
       pd.setPluginFile(jp.getFile().getAbsolutePath());

@@ -76,6 +76,15 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     return new File(facade.getProject().getLocation().toOSString());
   }
 
+  public List<String> getResources() {
+    List<String> res = new ArrayList<>();
+    for (Resource r : mavenProject.getBuild().getResources()) {
+      String loc = facade.getProject().getLocation().append(r.getDirectory()).toOSString();
+      res.add(loc);
+    }
+    return res;
+  }
+
   public List<IJenkinsPlugin> findPluginDependencies(IProgressMonitor monitor) throws CoreException {
     final List<IJenkinsPlugin> deps = new ArrayList<>();
     final IMaven maven = MavenPlugin.getMaven();
@@ -198,6 +207,16 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     return null;
   }
 
+  public void generatePluginFile(IProgressMonitor monitor) throws CoreException {
+    monitor.subTask("Generating .hpl for " + facade.getProject().getName());
+    List<MojoExecution> mojoExecutions = facade.getMojoExecutions(HPI_PLUGIN_GROUP_ID, HPI_PLUGIN_ARTIFACT_ID, monitor,
+        "test-hpl");
+    for (MojoExecution mojoExecution : mojoExecutions) {
+      MavenPlugin.getMaven().execute(facade.getMavenProject(), mojoExecution, monitor);
+      break;
+    }
+  }
+
   public static JenkinsPluginProject create(IProject project, IProgressMonitor monitor) {
     return create(MavenPlugin.getMavenProjectRegistry().getProject(project), monitor);
   }
@@ -238,14 +257,4 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
 
     return jps;
   }
-
-  public List<String> getResources() {
-    List<String> res = new ArrayList<>();
-    for (Resource r : mavenProject.getBuild().getResources()) {
-      String loc = facade.getProject().getLocation().append(r.getDirectory()).toOSString();
-      res.add(loc);
-    }
-    return res;
-  }
-
 }
