@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+	
+	<conversionRule conversionWord="trex" converterClass="io.takari.m2e.jenkins.launcher.log.ExceptionConverter" />
+	
+	<appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+		<target>System.out</target>
+		<filter class="io.takari.m2e.jenkins.launcher.log.StdOutFilter" />
+		<encoder>
+			<pattern>%d{HH:mm:ss.SSS} %-5level: [%logger{0}] %msg%n%trex</pattern>
+		</encoder>
+	</appender>
+	
+	<appender name="stderr" class="ch.qos.logback.core.ConsoleAppender">
+		<target>System.err</target>
+		<filter class="io.takari.m2e.jenkins.launcher.log.ErrOutFilter" />
+		<encoder>
+			<pattern>%d{HH:mm:ss.SSS} %-5level: [%logger{0}] %msg%n%trex</pattern>
+		</encoder>
+	</appender>
+	
+	<root>
+		<appender-ref ref="stdout" />
+		<appender-ref ref="stderr" />
+	</root>
+	
+</configuration>

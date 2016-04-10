@@ -8,7 +8,6 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 public class PluginDesc {
 
   private String id;
-  private String location;
   private String pluginFile;
   private List<String> resources;
 
@@ -19,15 +18,6 @@ public class PluginDesc {
 
   public void setId(String id) {
     this.id = id;
-  }
-
-  @XmlElement
-  public String getLocation() {
-    return location;
-  }
-
-  public void setLocation(String location) {
-    this.location = location;
   }
 
   @XmlElement

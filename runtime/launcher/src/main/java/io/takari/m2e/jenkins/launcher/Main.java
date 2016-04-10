@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import java.util.UUID;
-import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -23,22 +22,43 @@ import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.webapp.WebAppClassLoader;
 import org.eclipse.jetty.webapp.WebAppContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
 import io.takari.m2e.jenkins.launcher.desc.Descriptor;
 import io.takari.m2e.jenkins.launcher.desc.PluginDesc;
+import io.takari.m2e.jenkins.launcher.log.JettyLogWrapper;
 
 public class Main {
 
-  private static Logger log = Logger.getLogger("Jenkins");
+  static {
+    SLF4JBridgeHandler.removeHandlersForRootLogger();
+    SLF4JBridgeHandler.install();
+
+    LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
+    lc.setPackagingDataEnabled(false);
+
+    boolean allDebug = Boolean.parseBoolean(System.getProperty("debugLogs"));
+    ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) LoggerFactory
+        .getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
+    root.setLevel(allDebug ? Level.TRACE : Level.INFO);
+    System.setProperty("org.eclipse.jetty.util.log.class", JettyLogWrapper.class.getName());
+  }
+
+  private static Logger log = LoggerFactory.getLogger("Launcher");
 
   public static void main(String[] args) throws Exception {
-    if(args.length == 0) {
+    if (args.length == 0) {
       log.info("Usage: launcher.jar <descriptorLocation>");
       return;
     }
+
     String descLocation = args[0];
     Descriptor desc = Descriptor.read(new File(descLocation));
-    
+
     // auto-enable stapler trace, unless otherwise configured already.
     setSystemPropertyIfEmpty("stapler.trace", "true");
 
@@ -55,29 +75,31 @@ public class Main {
 
     // this adds 3 secs to the shutdown time. Skip it.
     setSystemPropertyIfEmpty("hudson.DNSMultiCast.disabled", "true");
-    
+
     // expose the current top-directory of the plugin for dev-mode-plugin
     setSystemPropertyIfEmpty("jenkins.moduleRoot", new File(".").getCanonicalPath());
-    
+
     // set JENKINS_HOME
     String jenkinsHome = new File("./work").getCanonicalPath();
     setSystemPropertyIfEmpty("JENKINS_HOME", jenkinsHome);
     log.info("Jenkins home: " + jenkinsHome);
     log.info("Jenkins war: " + desc.getJenkinsWar());
-    
+
     // TODO support launching exploded wars
     if (new File(desc.getJenkinsWar()).isDirectory()) {
       throw new IllegalStateException("Running exploded jenkins war is not supported yet");
     }
 
     File pluginsDir = new File(jenkinsHome, "plugins");
+    FileUtils.deleteDirectory(pluginsDir);
     pluginsDir.mkdirs();
 
     StringBuilder res = new StringBuilder();
-    for(PluginDesc pd: desc.getPlugins()) {
+    for (PluginDesc pd : desc.getPlugins()) {
       if (pd.getResources() != null) {
-        for(String resource: pd.getResources()) {
-          if (res.length() != 0) res.append(';');
+        for (String resource : pd.getResources()) {
+          if (res.length() != 0)
+            res.append(';');
           res.append(resource);
         }
       }
@@ -87,7 +109,7 @@ public class Main {
       String ext = pf.getName().endsWith(".hpl") ? ".hpl" : ".jpi";
       File target = new File(pluginsDir, pd.getId() + ext);
 
-      log.info("Copying plugin: " + pd.getLocation() + " to " + target.getName());
+      log.info("Copying plugin: " + pd.getPluginFile() + " to " + target.getName());
       FileUtils.copyFile(pf, target);
       // pin the dependency plugin, so that even if a different version of the
       // same plugin is bundled to Jenkins, we still use the plugin as specified
@@ -192,7 +214,7 @@ public class Main {
     }
     File extractedPath = new File(extractedWebAppDir, VERSION_PATH);
     if (!extractedPath.isFile()) {
-      log.warning("no such file " + extractedPath);
+      log.warn("no such file " + extractedPath);
       return false;
     }
     InputStream is = new FileInputStream(extractedPath);
@@ -203,7 +225,7 @@ public class Main {
       is.close();
     }
     if (extractedVersion == null) {
-      log.warning("no " + VERSION_PROP + " in " + extractedPath);
+      log.warn("no " + VERSION_PROP + " in " + extractedPath);
       return false;
     }
     ZipFile zip = new ZipFile(webApp);
@@ -211,7 +233,7 @@ public class Main {
     try {
       ZipEntry entry = zip.getEntry(VERSION_PATH);
       if (entry == null) {
-        log.warning("no " + VERSION_PATH + " in " + webApp);
+        log.warn("no " + VERSION_PATH + " in " + webApp);
         return false;
       }
       is = zip.getInputStream(entry);
@@ -224,7 +246,7 @@ public class Main {
       zip.close();
     }
     if (originalVersion == null) {
-      log.warning("no " + VERSION_PROP + " in jar:" + webApp.toURI() + "!/" + VERSION_PATH);
+      log.warn("no " + VERSION_PROP + " in jar:" + webApp.toURI() + "!/" + VERSION_PATH);
       return false;
     }
     if (!extractedVersion.equals(originalVersion)) {

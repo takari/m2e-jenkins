@@ -30,6 +30,8 @@ public class JenkinsLaunchConfig implements Serializable {
   private static final String CONTEXT = ID + ".context";
   private static final String PLUGINS = ID + ".plugins";
   private static final String MAINPLUGIN = ID + ".mainplugin";
+  private static final String INCLUDETESTSCOPE = ID + ".includeTestScope";
+  private static final String INCLUDEOPTIONAL = ID + ".includeOptional";
 
   private static final String DEF_HOST = "0.0.0.0";
   private static final int DEF_PORT = 8081;
@@ -42,6 +44,8 @@ public class JenkinsLaunchConfig implements Serializable {
   private String context;
   private String mainPlugin;
   private final Set<String> plugins;
+  private boolean includeTestScope;
+  private boolean includeOptional;
   
   @SuppressWarnings("unchecked")
   public JenkinsLaunchConfig() {
@@ -98,6 +102,22 @@ public class JenkinsLaunchConfig implements Serializable {
     return plugins instanceof IObservableSet ? (IObservableSet) plugins : null;
   }
 
+  public boolean isIncludeTestScope() {
+    return includeTestScope;
+  }
+
+  public void setIncludeTestScope(boolean includeTestScope) {
+    pchange.firePropertyChange("includeTestScope", this.includeTestScope, this.includeTestScope = includeTestScope);
+  }
+
+  public boolean isIncludeOptional() {
+    return includeOptional;
+  }
+
+  public void setIncludeOptional(boolean includeOptional) {
+    pchange.firePropertyChange("includeOptional", this.includeOptional, this.includeOptional = includeOptional);
+  }
+
   public void setDefaults(ILaunchConfigurationWorkingCopy config) {
     config.setAttribute(HOST, DEF_HOST);
     config.setAttribute(PORT, DEF_PORT);
@@ -110,6 +130,8 @@ public class JenkinsLaunchConfig implements Serializable {
       setPort(config.getAttribute(PORT, DEF_PORT));
       setContext(config.getAttribute(CONTEXT, DEF_CONTEXT));
       setMainPlugin(config.getAttribute(MAINPLUGIN, ""));
+      setIncludeTestScope(config.getAttribute(INCLUDETESTSCOPE, false));
+      setIncludeOptional(config.getAttribute(INCLUDEOPTIONAL, false));
       getPlugins().clear();
       getPlugins().addAll(config.getAttribute(PLUGINS, Collections.<String> emptyList()));
     } catch (CoreException e) {
@@ -123,6 +145,8 @@ public class JenkinsLaunchConfig implements Serializable {
     config.setAttribute(CONTEXT, getContext());
     config.setAttribute(MAINPLUGIN, getMainPlugin());
     setAttribute(config, PLUGINS, getPlugins());
+    config.setAttribute(INCLUDETESTSCOPE, isIncludeTestScope());
+    config.setAttribute(INCLUDEOPTIONAL, isIncludeOptional());
   }
 
   private static void setAttribute(ILaunchConfigurationWorkingCopy config, String name, Set<String> set) {

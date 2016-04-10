@@ -10,6 +10,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.eclipse.core.resources.IProject;
@@ -138,8 +139,7 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
     desc.setContext("/" + config.getContext());
     desc.setPlugins(new ArrayList<PluginDesc>());
 
-    Map<ArtifactKey, IJenkinsPlugin> dependencyPlugins = new HashMap<>();
-    JenkinsPluginArtifact jwar = null;
+    Artifact jwar = null;
 
     Map<ArtifactKey, JenkinsPluginProject> projects = new HashMap<>();
     for (String plugin : config.getPlugins()) {
@@ -150,47 +150,60 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
         continue;
 
       // select the highest jenkins version from selected plugins
-      JenkinsPluginArtifact jw = jp.findJenkinsWar(monitor);
-      if (jwar == null || compareVersions(jw, jwar) > 0) {
+      Artifact jw = jp.findJenkinsWar(monitor);
+      if (jwar == null || compareVersions(jw.getVersion(), jwar.getVersion()) > 0) {
         jwar = jw;
       }
 
-      // force regeneration of the file
-      jp.generatePluginFile(monitor);
-
       PluginDesc pd = new PluginDesc();
       pd.setId(jp.getFacade().getArtifactKey().getArtifactId());
-      pd.setPluginFile(jp.getFile().getAbsolutePath());
-      pd.setLocation(jp.getLocation().getAbsolutePath());
+      pd.setPluginFile(jp.getPluginFile(monitor).getAbsolutePath());
       pd.setResources(jp.getResources());
       desc.getPlugins().add(pd);
 
       projects.put(new ArtifactKey(jp.getGroupId(), jp.getArtifactId(), null, null), jp);
     }
 
+    Map<ArtifactKey, DependencyContainer> dependencyPlugins = new HashMap<>();
+
     for (JenkinsPluginProject jp : projects.values()) {
       // collect dependency plugins, but take the highest version
-      for (IJenkinsPlugin dep : jp.findPluginDependencies(monitor)) {
-        ArtifactKey ak = new ArtifactKey(dep.getGroupId(), dep.getArtifactId(), null, null);
+
+      List<PluginDependency> deps = jp.findPluginDependencies(monitor);
+      for (PluginDependency dep : deps) {
+        IJenkinsPlugin pd = dep.getPlugin();
+        ArtifactKey ak = new ArtifactKey(pd.getGroupId(), pd.getArtifactId(), null, null);
 
         // do not override plugin project with a dependency artifact
         if (projects.containsKey(ak)) {
           continue;
         }
 
-        IJenkinsPlugin existingArt = dependencyPlugins.get(ak);
-        if (existingArt == null || compareVersions(existingArt, dep) < 0) {
-          dependencyPlugins.put(ak, dep);
+        DependencyContainer existing = dependencyPlugins.get(ak);
+        if (existing == null) {
+          dependencyPlugins.put(ak, new DependencyContainer(dep));
+        } else {
+          existing.update(dep);
         }
       }
     }
     
     // add dependency plugins
-    for (IJenkinsPlugin jp : dependencyPlugins.values()) {
+    for (DependencyContainer c : dependencyPlugins.values()) {
+      if (!config.isIncludeOptional() && c.isOptional())
+        continue;
+      if (!config.isIncludeTestScope() && c.isTestScope())
+        continue;
+
+      if (c.isOverride()) {
+        // TODO log overrides
+      }
+
+      IJenkinsPlugin jp = c.getPlugin();
+
       PluginDesc pd = new PluginDesc();
       pd.setId(jp.getArtifactId());
-      pd.setPluginFile(jp.getFile().getAbsolutePath());
-      pd.setLocation(jp.getLocation().getAbsolutePath());
+      pd.setPluginFile(jp.getPluginFile(monitor).getAbsolutePath());
       pd.setResources(jp.getResources());
       desc.getPlugins().add(pd);
     }
@@ -200,9 +213,9 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
     return desc;
   }
 
-  private static int compareVersions(IJenkinsPlugin art1, IJenkinsPlugin art2) {
-    ArtifactVersion ver1 = new DefaultArtifactVersion(art1.getVersion());
-    ArtifactVersion ver2 = new DefaultArtifactVersion(art2.getVersion());
+  private static int compareVersions(String v1, String v2) {
+    ArtifactVersion ver1 = new DefaultArtifactVersion(v1);
+    ArtifactVersion ver2 = new DefaultArtifactVersion(v2);
     return ver1.compareTo(ver2);
   }
 
@@ -229,5 +242,45 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
 
     desc.write(descriptorFile);
     return descriptorFile;
+  }
+
+  private static class DependencyContainer {
+    private IJenkinsPlugin plugin;
+    private boolean optional;
+    private boolean testScope;
+    private boolean override;
+
+    public DependencyContainer(PluginDependency dep) {
+      plugin = dep.getPlugin();
+      optional = dep.isOptional();
+      testScope = dep.isTestScope();
+      override = dep.isOverride();
+    }
+
+    public void update(PluginDependency dep) {
+
+      if (compareVersions(plugin.getVersion(), dep.getPlugin().getVersion()) < 0) {
+        plugin = dep.getPlugin();
+        override = dep.isOverride();
+      }
+      optional &= dep.isOptional();
+      testScope &= dep.isTestScope();
+    }
+
+    public IJenkinsPlugin getPlugin() {
+      return plugin;
+    }
+
+    public boolean isOptional() {
+      return optional;
+    }
+
+    public boolean isTestScope() {
+      return testScope;
+    }
+
+    public boolean isOverride() {
+      return override;
+    }
   }
 }

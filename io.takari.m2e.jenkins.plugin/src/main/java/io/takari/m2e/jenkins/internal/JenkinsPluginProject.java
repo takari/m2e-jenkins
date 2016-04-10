@@ -2,21 +2,35 @@ package io.takari.m2e.jenkins.internal;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.DefaultArtifact;
+import org.apache.maven.artifact.versioning.ArtifactVersion;
+import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
+import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
+import org.apache.maven.artifact.versioning.Restriction;
+import org.apache.maven.artifact.versioning.VersionRange;
+import org.apache.maven.execution.MavenExecutionResult;
+import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Resource;
+import org.apache.maven.model.building.ModelBuildingRequest;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.ProjectBuildingRequest;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.m2e.core.MavenPlugin;
+import org.eclipse.m2e.core.embedder.ArtifactKey;
 import org.eclipse.m2e.core.embedder.ICallable;
 import org.eclipse.m2e.core.embedder.IMaven;
 import org.eclipse.m2e.core.embedder.IMavenExecutionContext;
@@ -47,10 +61,6 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     return facade;
   }
 
-  public MavenProject getMavenProject() {
-    return mavenProject;
-  }
-
   @Override
   public String getGroupId() {
     return mavenProject.getGroupId();
@@ -66,14 +76,32 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     return mavenProject.getVersion();
   }
 
-  public File getFile() {
-    // assume that test-hpl mojo writes the file
-    File testDir = new File(mavenProject.getBuild().getTestOutputDirectory());
-    return new File(testDir, "the.hpl");
+  @Override
+  public MavenProject getMavenProject() {
+    return mavenProject;
   }
 
-  public File getLocation() {
-    return new File(facade.getProject().getLocation().toOSString());
+  @Override
+  public File getPluginFile(IProgressMonitor monitor) throws CoreException {
+    // assume that test-hpl mojo writes the file
+    File testDir = new File(mavenProject.getBuild().getTestOutputDirectory());
+    File hpl = new File(testDir, "the.hpl");
+
+    if (!hpl.exists()) {
+      generatePluginFile(monitor);
+    }
+
+    return hpl;
+  }
+
+  private void generatePluginFile(IProgressMonitor monitor) throws CoreException {
+    monitor.subTask("Generating .hpl for " + facade.getProject().getName());
+    List<MojoExecution> mojoExecutions = facade.getMojoExecutions(HPI_PLUGIN_GROUP_ID, HPI_PLUGIN_ARTIFACT_ID, monitor,
+        "test-hpl");
+    for (MojoExecution mojoExecution : mojoExecutions) {
+      MavenPlugin.getMaven().execute(facade.getMavenProject(), mojoExecution, monitor);
+      break;
+    }
   }
 
   public List<String> getResources() {
@@ -85,61 +113,180 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     return res;
   }
 
-  public List<IJenkinsPlugin> findPluginDependencies(IProgressMonitor monitor) throws CoreException {
-    final List<IJenkinsPlugin> deps = new ArrayList<>();
+  public List<PluginDependency> findPluginDependencies(IProgressMonitor monitor)
+      throws CoreException {
     final IMaven maven = MavenPlugin.getMaven();
-
-    maven.execute(false, true /* force update */, new ICallable<Void>() {
+    return maven.execute(false, true /* force update */, new ICallable<List<PluginDependency>>() {
       @Override
-      public Void call(IMavenExecutionContext context, IProgressMonitor monitor) throws CoreException {
+      public List<PluginDependency> call(IMavenExecutionContext context, IProgressMonitor monitor)
+          throws CoreException {
+        List<PluginDependency> deps = new ArrayList<>();
 
         for (Artifact art : mavenProject.getArtifacts()) {
           if (monitor.isCanceled())
             break;
-
-          JenkinsPluginProject prj = JenkinsPluginProject.create(art, monitor);
-          if (prj != null) {
-            deps.add(prj);
-            continue;
-          }
-
-          IMavenProjectFacade facade = MavenPlugin.getMavenProjectRegistry().getMavenProject(art.getGroupId(),
-              art.getArtifactId(), art.getVersion());
-          if (facade != null) {
-            // just a plain dependency, skip it
-            continue;
-          }
-
-          // when a plugin depends on another plugin, it doesn't specify the
-          // type as hpi or jpi, so we need to resolve its POM to see it
-          File pom = resolveIfNeeded(art.getGroupId(), art.getArtifactId(), art.getVersion(), "pom", mavenProject,
-              monitor);
-          Model depModel = maven.readModel(pom);
-
-          if (isJenkinsType(depModel.getPackaging())) {
-            File hpi = resolveIfNeeded(art.getGroupId(), art.getArtifactId(), art.getVersion(), "hpi", mavenProject,
-                monitor);
-            deps.add(new JenkinsPluginArtifact(art.getGroupId(), art.getArtifactId(), art.getVersion(), hpi));
+          IJenkinsPlugin jp = resolvePlugin(art.getGroupId(), art.getArtifactId(), art.getVersion(), mavenProject,
+              context, monitor);
+          if (jp != null) {
+            deps.add(new PluginDependency(jp, isTestScope(art.getScope()), false));
           }
         }
-        return null;
+        return correctVersions(deps, context, monitor);
       }
+
     }, monitor);
-
-    if (monitor.isCanceled())
-      return Collections.emptyList();
-
-    return deps;
   }
 
-  private File resolveIfNeeded(String groupId, String artifactId, String version, String type, MavenProject project,
+  private IJenkinsPlugin resolvePlugin(String groupId, String artifactId, String version,
+      MavenProject containingProject, IMavenExecutionContext context, IProgressMonitor monitor) throws CoreException {
+    JenkinsPluginProject prj = JenkinsPluginProject.create(groupId, artifactId, version, monitor);
+    if (prj != null) {
+      return prj;
+    }
+
+    IMavenProjectFacade facade = MavenPlugin.getMavenProjectRegistry().getMavenProject(groupId, artifactId, version);
+    if (facade != null) {
+      // just a plain dependency
+      return null;
+    }
+
+    // when a plugin depends on another plugin, it doesn't specify the
+    // type as hpi or jpi, so we need to resolve its POM to see it
+    File pom = resolveIfNeeded(groupId, artifactId, version, "pom", containingProject, monitor);
+
+    Model model = MavenPlugin.getMaven().readModel(pom);
+
+    if (isJenkinsType(model.getPackaging())) {
+      MavenProject mp = readProject(pom, context);
+      return new JenkinsPluginArtifact(mp, containingProject);
+    }
+
+    return null;
+  }
+
+  protected boolean isTestScope(String scope) {
+    return "test".equals(scope);
+  }
+
+  private MavenProject readProject(File pom, IMavenExecutionContext context) throws CoreException {
+    ProjectBuildingRequest req = context.newProjectBuildingRequest();
+    req.setProcessPlugins(false);
+    req.setResolveDependencies(false);
+    req.setValidationLevel(ModelBuildingRequest.VALIDATION_LEVEL_MINIMAL);
+    MavenExecutionResult res = MavenPlugin.getMaven().readMavenProject(pom, req);
+    return res.getProject();
+  }
+
+  protected List<PluginDependency> correctVersions(List<PluginDependency> plugins,
+      IMavenExecutionContext context,
+      IProgressMonitor monitor) throws CoreException {
+    
+    // transitive dependency plugins might contain optional dependencies on other 
+    // plugins and will not be happy if older versions of such dependencies are
+    // installed, so bump their versions
+    
+    Map<ArtifactKey, PluginContainer> pluginMap = new HashMap<>();
+    for (PluginDependency jp : plugins) {
+      pluginMap.put(key(jp.getPlugin()), new PluginContainer(jp));
+    }
+    
+    // plugins might get processed multiple times
+    Deque<PluginDependency> q = new LinkedList<>(plugins);
+    
+    while(!q.isEmpty()) {
+      PluginDependency pd = q.removeFirst();
+      IJenkinsPlugin jp = pd.getPlugin();
+      
+      List<Dependency> deps = jp.getMavenProject().getDependencies();
+
+      for (Dependency dep : deps) {
+        ArtifactKey key = key(dep);
+        PluginContainer dc = pluginMap.get(key);
+
+        boolean existingIsOptional = (dc == null ? true : dc.getDependency().isOptional());
+        boolean considerAsOptional = pd.isOptional() || dep.isOptional();
+        boolean optional = existingIsOptional && considerAsOptional;
+
+        boolean existingIsTestScope = (dc == null ? true : dc.getDependency().isTestScope());
+        boolean considerAsTestScope = pd.isTestScope() || isTestScope(dep.getScope());
+        boolean testScope = existingIsTestScope && considerAsTestScope;
+
+        ArtifactVersion dver = ver(dep);
+
+        IJenkinsPlugin newJp = resolvePlugin(dep.getGroupId(), dep.getArtifactId(), dver.toString(),
+            jp.getMavenProject(), context, monitor);
+
+        if (dc == null && newJp == null)
+          continue;
+
+        if (dc != null) {
+          if (dver.compareTo(dc.getVersion()) > 0) {
+
+            if (newJp == null) {
+              throw new IllegalStateException("Cannot resolve a newer version of existing plugin " + dep);
+            }
+
+            PluginDependency newPd = new PluginDependency(newJp, testScope, optional, true /* override */);
+            q.remove(dc.getDependency());
+            dc.setPlugin(newPd);
+            q.add(newPd);
+          }
+        } else {
+          PluginDependency newPd = new PluginDependency(newJp, testScope, optional);
+          pluginMap.put(key, new PluginContainer(newPd));
+          q.add(newPd);
+        }
+      }
+    }
+    
+    List<PluginDependency> result = new ArrayList<>();
+    for(PluginContainer pc: pluginMap.values()) {
+      result.add(pc.getDependency());
+    }
+    return result;
+  }
+
+  private static ArtifactVersion ver(Dependency dep) {
+    return ver(dep.getVersion());
+  }
+
+  private static ArtifactVersion ver(String ver) {
+    VersionRange r;
+    try {
+      r = VersionRange.createFromVersionSpec(ver);
+    } catch (InvalidVersionSpecificationException e) {
+      throw new IllegalStateException("Can't parse version " + ver, e);
+    }
+    if (r.getRecommendedVersion() != null)
+      return r.getRecommendedVersion();
+
+    for (Restriction rx : r.getRestrictions()) {
+      if (rx.isLowerBoundInclusive()) {
+        return rx.getLowerBound();
+      }
+      if (rx.isUpperBoundInclusive()) {
+        return rx.getUpperBound();
+      }
+    }
+    throw new IllegalStateException("Can't decide which version to use " + ver);
+  }
+
+  private static ArtifactKey key(Dependency dep) {
+    return new ArtifactKey(dep.getGroupId(), dep.getArtifactId(), null, null);
+  }
+
+  private static ArtifactKey key(IJenkinsPlugin jp) {
+    return new ArtifactKey(jp.getGroupId(), jp.getArtifactId(), null, null);
+  }
+
+  static File resolveIfNeeded(String groupId, String artifactId, String version, String type, MavenProject project,
       IProgressMonitor monitor) throws CoreException {
 
     IMaven maven = MavenPlugin.getMaven();
     File repoBasedir = new File(maven.getLocalRepositoryPath());
 
-    String pomLocation = maven.getArtifactPath(maven.getLocalRepository(), groupId, artifactId, version, type, null);
-    File file = new File(repoBasedir, pomLocation);
+    String fileLocation = maven.getArtifactPath(maven.getLocalRepository(), groupId, artifactId, version, type, null);
+    File file = new File(repoBasedir, fileLocation);
 
     // in most cases it should be there
     if (file.exists()) {
@@ -149,10 +296,10 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     // but if it's not..
     monitor.subTask("Resolving " + artifactId + ":" + version + " " + type);
     return MavenPlugin.getMaven().resolve(groupId, artifactId, version, type, null,
-        mavenProject.getRemoteArtifactRepositories(), monitor).getFile();
+        project.getRemoteArtifactRepositories(), monitor).getFile();
   }
 
-  public JenkinsPluginArtifact findJenkinsWar(IProgressMonitor monitor)
+  public Artifact findJenkinsWar(IProgressMonitor monitor)
       throws CoreException {
 
     String jenkinsWarId = getHPIMojoParameter("test-hpl", "jenkinsWarId", String.class, monitor);
@@ -174,7 +321,9 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
         } else {
           f = resolveIfNeeded(a.getGroupId(), a.getArtifactId(), a.getVersion(), "war", mavenProject, monitor);
         }
-        return new JenkinsPluginArtifact(a.getGroupId(), a.getArtifactId(), a.getVersion(), f);
+        Artifact art = new DefaultArtifact(a.getGroupId(), a.getArtifactId(), a.getVersion(), null, "war", "", null);
+        art.setFile(f);
+        return art;
       }
     }
     return null;
@@ -207,24 +356,13 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     return null;
   }
 
-  public void generatePluginFile(IProgressMonitor monitor) throws CoreException {
-    monitor.subTask("Generating .hpl for " + facade.getProject().getName());
-    List<MojoExecution> mojoExecutions = facade.getMojoExecutions(HPI_PLUGIN_GROUP_ID, HPI_PLUGIN_ARTIFACT_ID, monitor,
-        "test-hpl");
-    for (MojoExecution mojoExecution : mojoExecutions) {
-      MavenPlugin.getMaven().execute(facade.getMavenProject(), mojoExecution, monitor);
-      break;
-    }
-  }
-
   public static JenkinsPluginProject create(IProject project, IProgressMonitor monitor) {
     return create(MavenPlugin.getMavenProjectRegistry().getProject(project), monitor);
   }
 
-  public static JenkinsPluginProject create(Artifact art, IProgressMonitor monitor) {
-    return create(
-        MavenPlugin.getMavenProjectRegistry().getMavenProject(art.getGroupId(), art.getArtifactId(), art.getVersion()),
-        monitor);
+  public static JenkinsPluginProject create(String groupId, String artifactId, String version,
+      IProgressMonitor monitor) {
+    return create(MavenPlugin.getMavenProjectRegistry().getMavenProject(groupId, artifactId, version), monitor);
   }
 
   private static JenkinsPluginProject create(IMavenProjectFacade facade, IProgressMonitor monitor) {
@@ -256,5 +394,27 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     }
 
     return jps;
+  }
+
+  private static class PluginContainer {
+    PluginDependency dependency;
+    ArtifactVersion version;
+
+    public PluginContainer(PluginDependency dependency) {
+      setPlugin(dependency);
+    }
+
+    public void setPlugin(PluginDependency dependency) {
+      this.dependency = dependency;
+      this.version = new DefaultArtifactVersion(dependency.getPlugin().getVersion());
+    }
+
+    public PluginDependency getDependency() {
+      return dependency;
+    }
+
+    public ArtifactVersion getVersion() {
+      return version;
+    }
   }
 }

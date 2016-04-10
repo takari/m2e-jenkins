@@ -50,6 +50,8 @@ public class JenkinsMainTab extends JavaLaunchTab {
   private Combo cmbMainPlugin;
 
   private List<JenkinsPluginProject> projects;
+  private Button btnIncludeTestScope;
+  private Button btnIncludeOptionalTransitive;
 
   public JenkinsMainTab() {
     projects = JenkinsPluginProject.getProjects(new NullProgressMonitor());
@@ -159,6 +161,16 @@ public class JenkinsMainTab extends JavaLaunchTab {
       pluginCheckButtons.add(btnCheckButton);
     }
 
+    Label lblDependencies = new Label(grpPlugins, SWT.NONE);
+    lblDependencies.setText("Dependencies");
+
+    btnIncludeTestScope = new Button(grpPlugins, SWT.CHECK);
+    btnIncludeTestScope.setText("Include test scope");
+
+    new Label(grpPlugins, SWT.NONE);
+    btnIncludeOptionalTransitive = new Button(grpPlugins, SWT.CHECK);
+    btnIncludeOptionalTransitive.setText("Include optional transitive plugins");
+
     updateCombo();
 
     bindingContext = initDataBindings();
@@ -228,6 +240,18 @@ public class JenkinsMainTab extends JavaLaunchTab {
     IObservableValue observeSelectionCmbMainPluginObserveWidget = WidgetProperties.selection().observe(cmbMainPlugin);
     IObservableValue mainPluginConfigObserveValue = BeanProperties.value("mainPlugin").observe(config);
     bindingContext.bindValue(observeSelectionCmbMainPluginObserveWidget, mainPluginConfigObserveValue, null, null);
+    //
+    IObservableValue observeSelectionBtnIncludeTestScopeObserveWidget = WidgetProperties.selection()
+        .observe(btnIncludeTestScope);
+    IObservableValue includeTestScopeConfigObserveValue = BeanProperties.value("includeTestScope").observe(config);
+    bindingContext.bindValue(observeSelectionBtnIncludeTestScopeObserveWidget, includeTestScopeConfigObserveValue, null,
+        null);
+    //
+    IObservableValue observeSelectionBtnIncludeOptionalTransitiveObserveWidget = WidgetProperties.selection()
+        .observe(btnIncludeOptionalTransitive);
+    IObservableValue includeOptionalConfigObserveValue = BeanProperties.value("includeOptional").observe(config);
+    bindingContext.bindValue(observeSelectionBtnIncludeOptionalTransitiveObserveWidget,
+        includeOptionalConfigObserveValue, null, null);
     //
     return bindingContext;
   }

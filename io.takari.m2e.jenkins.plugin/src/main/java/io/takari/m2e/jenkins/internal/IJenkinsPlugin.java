@@ -3,6 +3,10 @@ package io.takari.m2e.jenkins.internal;
 import java.io.File;
 import java.util.List;
 
+import org.apache.maven.project.MavenProject;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
+
 public interface IJenkinsPlugin {
   String getGroupId();
 
@@ -10,9 +14,10 @@ public interface IJenkinsPlugin {
 
   String getVersion();
 
-  File getFile();
+  MavenProject getMavenProject();
 
-  File getLocation();
+  File getPluginFile(IProgressMonitor monitor) throws CoreException;
 
   List<String> getResources();
+
 }
