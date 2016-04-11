@@ -17,21 +17,6 @@
         </configurator>
       </action>
     </pluginExecution>
-    <pluginExecution>
-      <pluginExecutionFilter>
-        <groupId>org.jenkins-ci.tools</groupId>
-        <artifactId>maven-hpi-plugin</artifactId>
-        <versionRange>[1.0,)</versionRange>
-        <goals>
-          <goal>validate</goal>
-        </goals>
-      </pluginExecutionFilter>
-      <action>
-        <configurator>
-          <id>io.takari.m2e.jenkins.plugin.aptConfigurator</id>
-        </configurator>
-      </action>
-    </pluginExecution>
 
     <!-- maven-hpi-plugin includes that since 1.87 -->
     <pluginExecution>

@@ -14,15 +14,20 @@
   
   <dependencies>
     <dependency>
+      <groupId>org.apache.felix</groupId>
+      <artifactId>org.osgi.core</artifactId>
+      <version>1.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>io.takari.m2e.jenkins</groupId>
       <artifactId>io.takari.m2e.jenkins.launcher</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.felix</groupId>
-      <artifactId>org.osgi.core</artifactId>
-      <version>1.0.0</version>
-      <scope>provided</scope>
+      <groupId>net.java.sezpoz</groupId>
+      <artifactId>sezpoz</artifactId>
+      <version>1.9</version>
     </dependency>
   </dependencies>
     
@@ -39,7 +44,8 @@
             <Embed-Directory>jars</Embed-Directory>
             <_exportcontents>
               io.takari.m2e.jenkins.runtime,
-              io.takari.m2e.jenkins.launcher.desc
+              io.takari.m2e.jenkins.launcher.desc,
+              net.java.sezpoz.impl
             </_exportcontents>
 
             <Import-Package>
