@@ -140,6 +140,7 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
     desc.setHost(config.getHost());
     desc.setPort(config.getPort());
     desc.setContext("/" + config.getContext());
+    desc.setDisableCaches(config.isDisableCaches());
     desc.setPlugins(new ArrayList<PluginDesc>());
 
     Artifact jwar = null;

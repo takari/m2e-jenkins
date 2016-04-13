@@ -22,6 +22,7 @@ public class Descriptor {
   private String context;
   private String jenkinsWar;
   private List<PluginDesc> plugins;
+  private boolean disableCaches;
 
   @XmlElement
   public String getHost() {
@@ -67,6 +68,15 @@ public class Descriptor {
 
   public void setPlugins(List<PluginDesc> plugins) {
     this.plugins = plugins;
+  }
+
+  @XmlElement(name = "disableCaches")
+  public boolean isDisableCaches() {
+    return disableCaches;
+  }
+
+  public void setDisableCaches(boolean disableCaches) {
+    this.disableCaches = disableCaches;
   }
 
   public static Descriptor read(File f) {

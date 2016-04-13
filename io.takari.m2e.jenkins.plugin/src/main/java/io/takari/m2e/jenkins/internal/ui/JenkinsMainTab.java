@@ -52,6 +52,7 @@ public class JenkinsMainTab extends JavaLaunchTab {
   private List<JenkinsPluginProject> projects;
   private Button btnIncludeTestScope;
   private Button btnIncludeOptionalTransitive;
+  private Button btnDisableCaches;
 
   public JenkinsMainTab() {
     projects = JenkinsPluginProject.getProjects(new NullProgressMonitor());
@@ -132,6 +133,14 @@ public class JenkinsMainTab extends JavaLaunchTab {
 
     txtContext = new Text(grpJetty, SWT.BORDER);
     txtContext.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 3, 1));
+
+    Group grpOptions = new Group(comp, SWT.NONE);
+    grpOptions.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+    grpOptions.setText("Options");
+    grpOptions.setLayout(new GridLayout(1, false));
+
+    btnDisableCaches = new Button(grpOptions, SWT.CHECK);
+    btnDisableCaches.setText("Disable caches (slows down responses)");
 
     Group grpPlugins = new Group(comp, SWT.NONE);
     grpPlugins.setText("Plugin projects");
@@ -236,6 +245,12 @@ public class JenkinsMainTab extends JavaLaunchTab {
     IObservableValue observeTextTxtContextObserveWidget = WidgetProperties.text(SWT.Modify).observe(txtContext);
     IObservableValue contextConfigObserveValue = BeanProperties.value("context").observe(config);
     bindingContext.bindValue(observeTextTxtContextObserveWidget, contextConfigObserveValue, null, null);
+    //
+    IObservableValue observeSelectionBtnDisableCachesslowsObserveWidget = WidgetProperties.selection()
+        .observe(btnDisableCaches);
+    IObservableValue disableCachesConfigObserveValue = BeanProperties.value("disableCaches").observe(config);
+    bindingContext.bindValue(observeSelectionBtnDisableCachesslowsObserveWidget, disableCachesConfigObserveValue, null,
+        null);
     //
     IObservableValue observeSelectionCmbMainPluginObserveWidget = WidgetProperties.selection().observe(cmbMainPlugin);
     IObservableValue mainPluginConfigObserveValue = BeanProperties.value("mainPlugin").observe(config);

@@ -28,6 +28,8 @@ public class JenkinsLaunchConfig implements Serializable {
   private static final String HOST = ID + ".host";
   private static final String PORT = ID + ".port";
   private static final String CONTEXT = ID + ".context";
+  private static final String DISABLECACHES = ID + ".disableCaches";
+
   private static final String PLUGINS = ID + ".plugins";
   private static final String MAINPLUGIN = ID + ".mainplugin";
   private static final String INCLUDETESTSCOPE = ID + ".includeTestScope";
@@ -42,6 +44,8 @@ public class JenkinsLaunchConfig implements Serializable {
   private String host;
   private int port;
   private String context;
+  private boolean disableCaches;
+
   private String mainPlugin;
   private final Set<String> plugins;
   private boolean includeTestScope;
@@ -94,6 +98,14 @@ public class JenkinsLaunchConfig implements Serializable {
     pchange.firePropertyChange("context", this.context, this.context = context);
   }
 
+  public boolean isDisableCaches() {
+    return disableCaches;
+  }
+
+  public void setDisableCaches(boolean disableCaches) {
+    pchange.firePropertyChange("disableCaches", this.disableCaches, this.disableCaches = disableCaches);
+  }
+
   public Set<String> getPlugins() {
     return plugins;
   }
@@ -129,6 +141,7 @@ public class JenkinsLaunchConfig implements Serializable {
       setHost(config.getAttribute(HOST, DEF_HOST));
       setPort(config.getAttribute(PORT, DEF_PORT));
       setContext(config.getAttribute(CONTEXT, DEF_CONTEXT));
+      setDisableCaches(config.getAttribute(DISABLECACHES, false));
       setMainPlugin(config.getAttribute(MAINPLUGIN, ""));
       setIncludeTestScope(config.getAttribute(INCLUDETESTSCOPE, false));
       setIncludeOptional(config.getAttribute(INCLUDEOPTIONAL, false));
@@ -143,6 +156,8 @@ public class JenkinsLaunchConfig implements Serializable {
     config.setAttribute(HOST, getHost());
     config.setAttribute(PORT, getPort());
     config.setAttribute(CONTEXT, getContext());
+    config.setAttribute(DISABLECACHES, isDisableCaches());
+
     config.setAttribute(MAINPLUGIN, getMainPlugin());
     setAttribute(config, PLUGINS, getPlugins());
     config.setAttribute(INCLUDETESTSCOPE, isIncludeTestScope());

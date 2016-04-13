@@ -63,7 +63,9 @@ public class Main {
     setSystemPropertyIfEmpty("stapler.trace", "true");
 
     // enable view auto refreshing via stapler
-    setSystemPropertyIfEmpty("stapler.jelly.noCache", "true");
+    if (desc.isDisableCaches()) {
+      setSystemPropertyIfEmpty("stapler.jelly.noCache", "true");
+    }
 
     // allow Jetty to accept a bigger form so that it can handle update center
     // JSON post
