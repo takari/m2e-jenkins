@@ -48,9 +48,8 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
   private IMavenProjectFacade facade;
   private MavenProject mavenProject;
 
-  private JenkinsPluginProject(IMavenProjectFacade facade, MavenProject mavenProject) {
+  private JenkinsPluginProject(IMavenProjectFacade facade) {
     this.facade = facade;
-    this.mavenProject = mavenProject;
   }
 
   public IProject getProject() {
@@ -63,28 +62,31 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
 
   @Override
   public String getGroupId() {
-    return mavenProject.getGroupId();
+    return facade.getArtifactKey().getGroupId();
   }
 
   @Override
   public String getArtifactId() {
-    return mavenProject.getArtifactId();
+    return facade.getArtifactKey().getArtifactId();
   }
 
   @Override
   public String getVersion() {
-    return mavenProject.getVersion();
+    return facade.getArtifactKey().getVersion();
   }
 
   @Override
-  public MavenProject getMavenProject() {
+  public MavenProject getMavenProject(IProgressMonitor monitor) throws CoreException {
+    if (mavenProject == null) {
+      mavenProject = facade.getMavenProject(monitor);
+    }
     return mavenProject;
   }
 
   @Override
   public File getPluginFile(IProgressMonitor monitor) throws CoreException {
     // assume that test-hpl mojo writes the file
-    File testDir = new File(mavenProject.getBuild().getTestOutputDirectory());
+    File testDir = new File(getMavenProject(monitor).getBuild().getTestOutputDirectory());
     File hpl = new File(testDir, "the.hpl");
 
     if (!hpl.exists()) {
@@ -104,9 +106,9 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     }
   }
 
-  public List<String> getResources() {
+  public List<String> getResources(IProgressMonitor monitor) throws CoreException {
     List<String> res = new ArrayList<>();
-    for (Resource r : mavenProject.getBuild().getResources()) {
+    for (Resource r : getMavenProject(monitor).getBuild().getResources()) {
       String loc = facade.getProject().getLocation().append(r.getDirectory()).toOSString();
       res.add(loc);
     }
@@ -116,16 +118,18 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
   public List<PluginDependency> findPluginDependencies(IProgressMonitor monitor)
       throws CoreException {
     final IMaven maven = MavenPlugin.getMaven();
+
     return maven.execute(false, true /* force update */, new ICallable<List<PluginDependency>>() {
       @Override
       public List<PluginDependency> call(IMavenExecutionContext context, IProgressMonitor monitor)
           throws CoreException {
+        MavenProject mp = getMavenProject(monitor);
         List<PluginDependency> deps = new ArrayList<>();
 
-        for (Artifact art : mavenProject.getArtifacts()) {
+        for (Artifact art : mp.getArtifacts()) {
           if (monitor.isCanceled())
             break;
-          IJenkinsPlugin jp = resolvePlugin(art.getGroupId(), art.getArtifactId(), art.getVersion(), mavenProject,
+          IJenkinsPlugin jp = resolvePlugin(art.getGroupId(), art.getArtifactId(), art.getVersion(), mp,
               context, monitor);
           if (jp != null) {
             deps.add(new PluginDependency(jp, isTestScope(art.getScope()), false));
@@ -196,8 +200,9 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     while(!q.isEmpty()) {
       PluginDependency pd = q.removeFirst();
       IJenkinsPlugin jp = pd.getPlugin();
+      MavenProject mp = jp.getMavenProject(monitor);
       
-      List<Dependency> deps = jp.getMavenProject().getDependencies();
+      List<Dependency> deps = mp.getDependencies();
 
       for (Dependency dep : deps) {
         ArtifactKey key = key(dep);
@@ -213,8 +218,8 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
 
         ArtifactVersion dver = ver(dep);
 
-        IJenkinsPlugin newJp = resolvePlugin(dep.getGroupId(), dep.getArtifactId(), dver.toString(),
-            jp.getMavenProject(), context, monitor);
+        IJenkinsPlugin newJp = resolvePlugin(dep.getGroupId(), dep.getArtifactId(), dver.toString(), mp, context,
+            monitor);
 
         if (dc == null && newJp == null)
           continue;
@@ -299,31 +304,35 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
         project.getRemoteArtifactRepositories(), monitor).getFile();
   }
 
-  public Artifact findJenkinsWar(IProgressMonitor monitor)
+  public Artifact findJenkinsWar(IProgressMonitor monitor, boolean download)
       throws CoreException {
 
     String jenkinsWarId = getHPIMojoParameter("test-hpl", "jenkinsWarId", String.class, monitor);
 
-    Set<Artifact> artifacts = facade.getMavenProject().getArtifacts();
+    MavenProject mp = getMavenProject(monitor);
+    Set<Artifact> artifacts = mp.getArtifacts();
+
     for (Artifact a : artifacts) {
-      System.out.println(a.toString());
       boolean match;
       if (jenkinsWarId != null)
         match = (a.getGroupId() + ':' + a.getArtifactId()).equals(jenkinsWarId);
       else
         match = a.getArtifactId().equals("jenkins-war") || a.getArtifactId().equals("hudson-war");
       if (match) {
-        IMavenProjectFacade warProject = MavenPlugin.getMavenProjectRegistry().getMavenProject(a.getGroupId(),
-            a.getArtifactId(), a.getVersion());
-        File f;
-        if (warProject != null) {
-          f = new File(warProject.getProject().getLocation().toOSString());
-        } else {
-          f = resolveIfNeeded(a.getGroupId(), a.getArtifactId(), a.getVersion(), "war", mavenProject, monitor);
+        if (download) {
+          IMavenProjectFacade warProject = MavenPlugin.getMavenProjectRegistry().getMavenProject(a.getGroupId(),
+              a.getArtifactId(), a.getVersion());
+
+          a = new DefaultArtifact(a.getGroupId(), a.getArtifactId(), a.getVersion(), null, "war", "", null);
+          File f;
+          if (warProject != null) {
+            f = new File(warProject.getProject().getLocation().toOSString());
+          } else {
+            f = resolveIfNeeded(a.getGroupId(), a.getArtifactId(), a.getVersion(), "war", mp, monitor);
+          }
+          a.setFile(f);
         }
-        Artifact art = new DefaultArtifact(a.getGroupId(), a.getArtifactId(), a.getVersion(), null, "war", "", null);
-        art.setFile(f);
-        return art;
+        return a;
       }
     }
     return null;
@@ -347,7 +356,7 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
 
     for (MojoExecution mojoExecution : mojoExecutions) {
 
-      T value = MavenPlugin.getMaven().getMojoParameterValue(mavenProject, mojoExecution, parameter, asType,
+      T value = MavenPlugin.getMaven().getMojoParameterValue(getMavenProject(monitor), mojoExecution, parameter, asType,
           monitor);
       if (value != null) {
         return value;
@@ -370,12 +379,7 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
       return null;
     if (!isJenkinsType(facade.getPackaging()))
       return null;
-    try {
-      MavenProject mavenProject = facade.getMavenProject(monitor);
-      return new JenkinsPluginProject(facade, mavenProject);
-    } catch (CoreException e) {
-      return null;
-    }
+    return new JenkinsPluginProject(facade);
   }
 
   private static boolean isJenkinsType(String type) {

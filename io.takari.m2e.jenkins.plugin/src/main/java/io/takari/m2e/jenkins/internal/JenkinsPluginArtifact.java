@@ -33,7 +33,7 @@ public class JenkinsPluginArtifact implements IJenkinsPlugin {
   }
 
   @Override
-  public MavenProject getMavenProject() {
+  public MavenProject getMavenProject(IProgressMonitor monitor) {
     return mavenProject;
   }
 
@@ -44,7 +44,7 @@ public class JenkinsPluginArtifact implements IJenkinsPlugin {
   }
 
   @Override
-  public List<String> getResources() {
+  public List<String> getResources(IProgressMonitor monitor) {
     return Collections.emptyList();
   }
 

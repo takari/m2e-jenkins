@@ -143,7 +143,8 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
     desc.setDisableCaches(config.isDisableCaches());
     desc.setPlugins(new ArrayList<PluginDesc>());
 
-    Artifact jwar = null;
+    String jwarVersion = null;
+    JenkinsPluginProject jwarProject = null;
 
     Map<ArtifactKey, JenkinsPluginProject> projects = new HashMap<>();
     for (String plugin : config.getPlugins()) {
@@ -154,15 +155,16 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
         continue;
 
       // select the highest jenkins version from selected plugins
-      Artifact jw = jp.findJenkinsWar(monitor);
-      if (jwar == null || compareVersions(jw.getVersion(), jwar.getVersion()) > 0) {
-        jwar = jw;
+      Artifact jw = jp.findJenkinsWar(monitor, false);
+      if (jwarVersion == null || compareVersions(jw.getVersion(), jwarVersion) > 0) {
+        jwarVersion = jw.getVersion();
+        jwarProject = jp;
       }
 
       PluginDesc pd = new PluginDesc();
       pd.setId(jp.getFacade().getArtifactKey().getArtifactId());
       pd.setPluginFile(jp.getPluginFile(monitor).getAbsolutePath());
-      pd.setResources(jp.getResources());
+      pd.setResources(jp.getResources(monitor));
       desc.getPlugins().add(pd);
 
       projects.put(new ArtifactKey(jp.getGroupId(), jp.getArtifactId(), null, null), jp);
@@ -209,10 +211,12 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
       PluginDesc pd = new PluginDesc();
       pd.setId(jp.getArtifactId());
       pd.setPluginFile(jp.getPluginFile(monitor).getAbsolutePath());
-      pd.setResources(jp.getResources());
+      pd.setResources(jp.getResources(monitor));
       desc.getPlugins().add(pd);
     }
     
+    Artifact jwar = jwarProject.findJenkinsWar(monitor, true);
+
     desc.setJenkinsWar(jwar.getFile().getAbsolutePath());
 
     return desc;

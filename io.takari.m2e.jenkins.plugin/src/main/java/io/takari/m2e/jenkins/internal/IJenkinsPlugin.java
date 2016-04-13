@@ -14,10 +14,10 @@ public interface IJenkinsPlugin {
 
   String getVersion();
 
-  MavenProject getMavenProject();
+  MavenProject getMavenProject(IProgressMonitor monitor) throws CoreException;
 
   File getPluginFile(IProgressMonitor monitor) throws CoreException;
 
-  List<String> getResources();
+  List<String> getResources(IProgressMonitor monitor) throws CoreException;
 
 }
