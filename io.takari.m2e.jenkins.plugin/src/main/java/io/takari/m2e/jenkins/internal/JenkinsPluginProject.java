@@ -98,12 +98,21 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
 
   private void generatePluginFile(IProgressMonitor monitor) throws CoreException {
     monitor.subTask("Generating .hpl for " + facade.getProject().getName());
-    List<MojoExecution> mojoExecutions = facade.getMojoExecutions(HPI_PLUGIN_GROUP_ID, HPI_PLUGIN_ARTIFACT_ID, monitor,
+    final List<MojoExecution> mojoExecutions = facade.getMojoExecutions(HPI_PLUGIN_GROUP_ID, HPI_PLUGIN_ARTIFACT_ID,
+        monitor,
         "test-hpl");
-    for (MojoExecution mojoExecution : mojoExecutions) {
-      MavenPlugin.getMaven().execute(facade.getMavenProject(), mojoExecution, monitor);
-      break;
-    }
+
+    MavenPlugin.getMavenProjectRegistry().execute(facade, new ICallable<Void>() {
+      @Override
+      public Void call(IMavenExecutionContext context, IProgressMonitor monitor) throws CoreException {
+        // context.execute(project, callable, monitor);
+        for (MojoExecution mojoExecution : mojoExecutions) {
+          MavenPlugin.getMaven().execute(facade.getMavenProject(), mojoExecution, monitor);
+          break;
+        }
+        return null;
+      }
+    }, monitor);
   }
 
   public List<String> getResources(IProgressMonitor monitor) throws CoreException {
