@@ -10,11 +10,11 @@ import org.eclipse.core.runtime.IProgressMonitor;
 
 public class JenkinsPluginArtifact implements IJenkinsPlugin {
   private MavenProject mavenProject;
-  private MavenProject containingProject;
+  private JenkinsPluginProject rootProject;
 
-  public JenkinsPluginArtifact(MavenProject mavenProject, MavenProject containingProject) {
+  public JenkinsPluginArtifact(MavenProject mavenProject, JenkinsPluginProject rootProject) {
     this.mavenProject = mavenProject;
-    this.containingProject = containingProject;
+    this.rootProject = rootProject;
   }
 
   @Override
@@ -39,7 +39,7 @@ public class JenkinsPluginArtifact implements IJenkinsPlugin {
 
   @Override
   public File getPluginFile(IProgressMonitor monitor) throws CoreException {
-    return JenkinsPluginProject.resolveIfNeeded(getGroupId(), getArtifactId(), getVersion(), "hpi", containingProject,
+    return rootProject.resolveIfNeeded(getGroupId(), getArtifactId(), getVersion(), "hpi", mavenProject,
         monitor);
   }
 

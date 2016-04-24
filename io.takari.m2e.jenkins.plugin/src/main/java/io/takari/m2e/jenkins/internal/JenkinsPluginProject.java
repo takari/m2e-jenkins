@@ -11,6 +11,7 @@ import java.util.Set;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
+import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
@@ -35,6 +36,8 @@ import org.eclipse.m2e.core.embedder.ICallable;
 import org.eclipse.m2e.core.embedder.IMaven;
 import org.eclipse.m2e.core.embedder.IMavenExecutionContext;
 import org.eclipse.m2e.core.project.IMavenProjectFacade;
+
+import io.takari.m2e.jenkins.JenkinsPlugin;
 
 public class JenkinsPluginProject implements IJenkinsPlugin {
 
@@ -170,8 +173,12 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     Model model = MavenPlugin.getMaven().readModel(pom);
 
     if (isJenkinsType(model.getPackaging())) {
-      MavenProject mp = readProject(pom, context);
-      return new JenkinsPluginArtifact(mp, containingProject);
+      MavenProject mp = readProject(pom, context, getRemoteArtifactRepositories(containingProject, monitor));
+      if (mp != null) {
+        return new JenkinsPluginArtifact(mp, this);
+      }
+      JenkinsPlugin.error(
+          "Cannot read maven project " + groupId + ":" + artifactId + ":" + version);
     }
 
     return null;
@@ -181,12 +188,16 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     return "test".equals(scope);
   }
 
-  private MavenProject readProject(File pom, IMavenExecutionContext context) throws CoreException {
+  private MavenProject readProject(File pom, IMavenExecutionContext context, List<ArtifactRepository> remoteRepositories) throws CoreException {
     ProjectBuildingRequest req = context.newProjectBuildingRequest();
     req.setProcessPlugins(false);
     req.setResolveDependencies(false);
     req.setValidationLevel(ModelBuildingRequest.VALIDATION_LEVEL_MINIMAL);
+    req.setRemoteRepositories(remoteRepositories);
     MavenExecutionResult res = MavenPlugin.getMaven().readMavenProject(pom, req);
+    for (Throwable t : res.getExceptions()) {
+      JenkinsPlugin.error("Error reading pom " + pom, t);
+    }
     return res.getProject();
   }
 
@@ -293,7 +304,7 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     return new ArtifactKey(jp.getGroupId(), jp.getArtifactId(), null, null);
   }
 
-  static File resolveIfNeeded(String groupId, String artifactId, String version, String type, MavenProject project,
+  File resolveIfNeeded(String groupId, String artifactId, String version, String type, MavenProject project,
       IProgressMonitor monitor) throws CoreException {
 
     IMaven maven = MavenPlugin.getMaven();
@@ -310,7 +321,21 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     // but if it's not..
     monitor.subTask("Resolving " + artifactId + ":" + version + " " + type);
     return MavenPlugin.getMaven().resolve(groupId, artifactId, version, type, null,
-        project.getRemoteArtifactRepositories(), monitor).getFile();
+        getRemoteArtifactRepositories(project, monitor), monitor).getFile();
+  }
+
+  private List<ArtifactRepository> getRemoteArtifactRepositories(MavenProject containing, IProgressMonitor monitor)
+      throws CoreException {
+    List<ArtifactRepository> rootRepos = containing.getRemoteArtifactRepositories();
+    MavenProject rootProject = getMavenProject(monitor);
+    if (containing == rootProject) {
+      return rootRepos;
+    }
+
+    List<ArtifactRepository> allRepos = new ArrayList<>(rootRepos);
+    allRepos.addAll(containing.getRemoteArtifactRepositories());
+
+    return allRepos;
   }
 
   public Artifact findJenkinsWar(IProgressMonitor monitor, boolean download)

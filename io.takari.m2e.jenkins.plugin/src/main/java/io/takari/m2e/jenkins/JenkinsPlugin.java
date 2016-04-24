@@ -1,6 +1,8 @@
 package io.takari.m2e.jenkins;
 
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Plugin;
+import org.eclipse.core.runtime.Status;
 import org.osgi.framework.BundleContext;
 
 public class JenkinsPlugin extends Plugin {
@@ -22,5 +24,13 @@ public class JenkinsPlugin extends Plugin {
 
   public static JenkinsPlugin getInstance() {
     return instance;
+  }
+
+  public static void error(String message, Throwable t) {
+    getInstance().getLog().log(new Status(IStatus.ERROR, ID, message, t));
+  }
+
+  public static void error(String message) {
+    getInstance().getLog().log(new Status(IStatus.ERROR, ID, message));
   }
 }
