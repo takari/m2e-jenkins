@@ -31,9 +31,6 @@ import org.eclipse.m2e.core.internal.Bundles;
 import org.osgi.framework.Bundle;
 
 import io.takari.m2e.jenkins.JenkinsPlugin;
-import io.takari.m2e.jenkins.internal.idx.AnnotationIndexer;
-import io.takari.m2e.jenkins.internal.idx.HudsonAnnIndexer;
-import io.takari.m2e.jenkins.internal.idx.SezpozIndexer;
 import io.takari.m2e.jenkins.launcher.desc.Descriptor;
 import io.takari.m2e.jenkins.launcher.desc.PluginDesc;
 import io.takari.m2e.jenkins.runtime.JenkinsRuntimePlugin;
@@ -173,9 +170,8 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
     Map<ArtifactKey, DependencyContainer> dependencyPlugins = new HashMap<>();
 
     for (JenkinsPluginProject jp : projects.values()) {
-      // collect dependency plugins, but take the highest version
-      AnnotationIndexer.process(jp.getFacade(), monitor, new SezpozIndexer(), new HudsonAnnIndexer());
 
+      // collect dependency plugins, but take the highest version
       List<PluginDependency> deps = jp.findPluginDependencies(monitor);
       for (PluginDependency dep : deps) {
         IJenkinsPlugin pd = dep.getPlugin();

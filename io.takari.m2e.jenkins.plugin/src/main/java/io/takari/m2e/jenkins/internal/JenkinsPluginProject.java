@@ -26,6 +26,8 @@ import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuildingRequest;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
@@ -38,6 +40,9 @@ import org.eclipse.m2e.core.embedder.IMavenExecutionContext;
 import org.eclipse.m2e.core.project.IMavenProjectFacade;
 
 import io.takari.m2e.jenkins.JenkinsPlugin;
+import io.takari.m2e.jenkins.internal.idx.AnnotationIndexer;
+import io.takari.m2e.jenkins.internal.idx.HudsonAnnIndexer;
+import io.takari.m2e.jenkins.internal.idx.SezpozIndexer;
 
 public class JenkinsPluginProject implements IJenkinsPlugin {
 
@@ -93,17 +98,22 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     File hpl = new File(testDir, "the.hpl");
 
     if (!hpl.exists()) {
-      generatePluginFile(monitor);
+      monitor.subTask("Generating .hpl for " + facade.getProject().getName());
+      executeMojo(HPI_PLUGIN_GROUP_ID, HPI_PLUGIN_ARTIFACT_ID, "test-hpl", monitor);
     }
 
     return hpl;
   }
 
-  private void generatePluginFile(IProgressMonitor monitor) throws CoreException {
-    monitor.subTask("Generating .hpl for " + facade.getProject().getName());
-    final List<MojoExecution> mojoExecutions = facade.getMojoExecutions(HPI_PLUGIN_GROUP_ID, HPI_PLUGIN_ARTIFACT_ID,
-        monitor,
-        "test-hpl");
+  public void generateMessages(IProgressMonitor monitor) throws CoreException {
+    executeMojo(LOCALIZER_PLUGIN_GROUP_ID, LOCALIZER_PLUGIN_ARTIFACT_ID, "generate", monitor);
+    String output = getLocalizerMojoParameter("generate", "outputDirectory", String.class, monitor);
+    facade.getProject().getFolder(output).refreshLocal(IResource.DEPTH_INFINITE, monitor);
+  }
+
+  public void executeMojo(String groupId, String artifactId, String goal, IProgressMonitor monitor)
+      throws CoreException {
+    final List<MojoExecution> mojoExecutions = facade.getMojoExecutions(groupId, artifactId, monitor, goal);
 
     MavenPlugin.getMavenProjectRegistry().execute(facade, new ICallable<Void>() {
       @Override
@@ -377,10 +387,9 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     return getMojoParameter(HPI_PLUGIN_GROUP_ID, HPI_PLUGIN_ARTIFACT_ID, goal, parameter, asType, monitor);
   }
 
-  public String getLocalizerOutputDir(IProgressMonitor monitor) throws CoreException {
-    return getMojoParameter(LOCALIZER_PLUGIN_GROUP_ID, LOCALIZER_PLUGIN_ARTIFACT_ID, "generate", "outputDirectory",
-        String.class,
-        monitor);
+  public <T> T getLocalizerMojoParameter(String goal, String parameter, Class<T> asType, IProgressMonitor monitor)
+      throws CoreException {
+    return getMojoParameter(LOCALIZER_PLUGIN_GROUP_ID, LOCALIZER_PLUGIN_ARTIFACT_ID, goal, parameter, asType, monitor);
   }
 
   protected <T> T getMojoParameter(String groupId, String artifactId, String goal, String parameter, Class<T> asType,
@@ -397,6 +406,14 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
       }
     }
     return null;
+  }
+
+  public void processAnnotations(IProgressMonitor monitor) throws CoreException {
+    processAnnotations(monitor, null);
+  }
+
+  public void processAnnotations(IProgressMonitor monitor, IResourceDelta delta) throws CoreException {
+    AnnotationIndexer.process(facade, delta, monitor, new SezpozIndexer(), new HudsonAnnIndexer());
   }
 
   public static JenkinsPluginProject create(IProject project, IProgressMonitor monitor) {
@@ -455,4 +472,5 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
       return version;
     }
   }
+
 }

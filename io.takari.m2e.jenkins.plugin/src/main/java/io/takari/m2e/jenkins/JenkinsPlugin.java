@@ -7,7 +7,7 @@ import org.osgi.framework.BundleContext;
 
 public class JenkinsPlugin extends Plugin {
 
-  public static final String ID = "io.takari.m2e.jenkins";
+  public static final String ID = "io.takari.m2e.jenkins.plugin";
 
   private static JenkinsPlugin instance;
 
@@ -33,4 +33,5 @@ public class JenkinsPlugin extends Plugin {
   public static void error(String message) {
     getInstance().getLog().log(new Status(IStatus.ERROR, ID, message));
   }
+
 }

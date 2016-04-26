@@ -50,5 +50,30 @@
             priority="normal">
       </content-type>
    </extension>
+   <extension
+         id="nature"
+         name="Jenkins Nature"
+         point="org.eclipse.core.resources.natures">
+      <runtime>
+         <run
+               class="io.takari.m2e.jenkins.internal.JenkinsNature">
+         </run>
+      </runtime>
+      <builder
+            id="io.takari.m2e.jenkins.plugin.builder">
+      </builder>
+      <requires-nature
+            id="org.eclipse.m2e.core.maven2Nature">
+      </requires-nature>
+   </extension>
+   <extension
+         id="builder"
+         point="org.eclipse.core.resources.builders">
+      <builder
+            hasNature="true">
+         <run
+               class="io.takari.m2e.jenkins.plugin.internal.JenkinsBuilder">
+         </run></builder>
+   </extension>
 
 </plugin>

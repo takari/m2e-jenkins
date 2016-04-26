@@ -11,16 +11,27 @@ import java.util.Set;
 
 import org.apache.maven.project.MavenProject;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResourceDelta;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.jdt.core.compiler.CharOperation;
 import org.eclipse.jdt.internal.compiler.lookup.AnnotationBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding;
 import org.eclipse.m2e.core.MavenPlugin;
+import org.eclipse.m2e.core.project.IMavenProjectFacade;
 
 @SuppressWarnings("restriction")
 public class HudsonAnnIndexer extends AnnotationIndexer {
 
   private Map<String, Set<String>> index = new HashMap<>();
+
+  @Override
+  protected boolean isAffectedByDelta(IMavenProjectFacade facade, IResourceDelta delta) {
+    IPath path = facade.getOutputLocation().append("META-INF/annotations");
+    path = ResourcesPlugin.getWorkspace().getRoot().getFolder(path).getProjectRelativePath();
+    return delta.findMember(path) != null;
+  }
 
   @Override
   protected boolean isIndexed(String name) {

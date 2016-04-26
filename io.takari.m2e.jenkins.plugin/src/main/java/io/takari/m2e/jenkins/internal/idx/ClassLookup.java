@@ -96,12 +96,10 @@ public class ClassLookup implements ITypeRequestor {
 
   @Override
   public void accept(ISourceType[] sourceType, PackageBinding packageBinding, AccessRestriction accessRestriction) {
-    System.out.println("Source found");
   }
 
   @Override
   public void accept(org.eclipse.jdt.internal.compiler.env.ICompilationUnit unit, AccessRestriction accessRestriction) {
-    System.out.println("CU found");
   }
 
   public static ClassLookup create(IMavenProjectFacade facade, IProgressMonitor monitor) throws CoreException {
@@ -129,11 +127,8 @@ public class ClassLookup implements ITypeRequestor {
       int kind = cpe.getEntryKind();
       if (kind == IClasspathEntry.CPE_LIBRARY) {
         IPath path = cpe.getPath();
-        System.out.println("Lib " + path.toOSString());
         cp.add(path.toOSString());
       } else if (kind == IClasspathEntry.CPE_PROJECT) {
-        IPath path = cpe.getPath();
-        System.out.println("Prj " + path.toOSString());
         IProject cpp = ResourcesPlugin.getWorkspace().getRoot().findMember(cpe.getPath()).getProject();
         String dir = MavenPlugin.getMavenProjectRegistry().getProject(cpp).getMavenProject(monitor).getBuild()
             .getOutputDirectory();

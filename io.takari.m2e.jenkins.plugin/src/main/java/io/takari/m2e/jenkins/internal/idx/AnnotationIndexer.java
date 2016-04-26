@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.internal.compiler.lookup.AnnotationBinding;
@@ -17,8 +18,11 @@ public abstract class AnnotationIndexer {
 
   private Set<String> indexedAnnotations = new HashSet<>();
 
-
-  public void reindex(IMavenProjectFacade facade, IProgressMonitor monitor) throws CoreException {
+  public void reindex(IMavenProjectFacade facade, IResourceDelta delta, IProgressMonitor monitor) throws CoreException {
+    
+    if (delta != null && !isAffectedByDelta(facade, delta)) {
+      return;
+    }
 
     ClassLookup lookup = ClassLookup.create(facade, monitor);
 
@@ -64,6 +68,8 @@ public abstract class AnnotationIndexer {
     done(facade.getProject());
   }
 
+  protected abstract boolean isAffectedByDelta(IMavenProjectFacade facade, IResourceDelta delta);
+
   protected abstract void collectType(ReferenceBinding type, AnnotationBinding ann);
 
   protected abstract void collectField(ReferenceBinding type, String name, AnnotationBinding ann);
@@ -96,11 +102,13 @@ public abstract class AnnotationIndexer {
 
   protected abstract boolean isIndexed(String name);
 
-  public static void process(IMavenProjectFacade facade, IProgressMonitor monitor, AnnotationIndexer... idxs)
+  public static void process(IMavenProjectFacade facade, IResourceDelta delta, IProgressMonitor monitor,
+      AnnotationIndexer... idxs)
       throws CoreException {
     for (AnnotationIndexer idx : idxs) {
-      idx.reindex(facade, monitor);
+      idx.reindex(facade, delta, monitor);
     }
   }
+
 
 }

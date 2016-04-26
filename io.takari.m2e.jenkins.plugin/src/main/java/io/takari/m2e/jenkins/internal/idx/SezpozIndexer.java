@@ -9,8 +9,12 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.apache.maven.project.MavenProject;
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResourceDelta;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.compiler.CharOperation;
@@ -21,6 +25,7 @@ import org.eclipse.jdt.internal.compiler.lookup.FieldBinding;
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding;
 import org.eclipse.m2e.core.MavenPlugin;
+import org.eclipse.m2e.core.project.IMavenProjectFacade;
 
 import net.java.sezpoz.impl.SerAnnotatedElement;
 import net.java.sezpoz.impl.SezpozFactory;
@@ -29,6 +34,14 @@ import net.java.sezpoz.impl.SezpozFactory;
 public class SezpozIndexer extends AnnotationIndexer {
 
   private Map<String, List<SerAnnotatedElement>> index = new HashMap<>();
+
+  @Override
+  protected boolean isAffectedByDelta(IMavenProjectFacade facade, IResourceDelta delta) {
+    IPath path = facade.getOutputLocation().append("META-INF/annotations");
+    IFolder folder = ResourcesPlugin.getWorkspace().getRoot().getFolder(path);
+    path = folder.getProjectRelativePath();
+    return delta.findMember(path) != null;
+  }
 
   @Override
   protected boolean isIndexed(String name) {

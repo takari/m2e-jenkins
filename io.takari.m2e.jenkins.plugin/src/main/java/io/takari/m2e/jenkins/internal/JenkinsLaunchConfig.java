@@ -18,13 +18,11 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 
-import io.takari.m2e.jenkins.JenkinsPlugin;
-
 public class JenkinsLaunchConfig implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  private static final String ID = JenkinsPlugin.ID + ".launch";
+  private static final String ID = "io.takari.m2e.jenkins.launch";
   private static final String HOST = ID + ".host";
   private static final String PORT = ID + ".port";
   private static final String CONTEXT = ID + ".context";
@@ -34,6 +32,7 @@ public class JenkinsLaunchConfig implements Serializable {
   private static final String MAINPLUGIN = ID + ".mainplugin";
   private static final String INCLUDETESTSCOPE = ID + ".includeTestScope";
   private static final String INCLUDEOPTIONAL = ID + ".includeOptional";
+  private static final String LATESTVERSIONS = ID + ".latestVersions";
 
   private static final String DEF_HOST = "0.0.0.0";
   private static final int DEF_PORT = 8081;
@@ -50,6 +49,7 @@ public class JenkinsLaunchConfig implements Serializable {
   private final Set<String> plugins;
   private boolean includeTestScope;
   private boolean includeOptional;
+  private boolean latestVersions;
   
   @SuppressWarnings("unchecked")
   public JenkinsLaunchConfig() {
@@ -130,6 +130,14 @@ public class JenkinsLaunchConfig implements Serializable {
     pchange.firePropertyChange("includeOptional", this.includeOptional, this.includeOptional = includeOptional);
   }
 
+  public boolean isLatestVersions() {
+    return latestVersions;
+  }
+
+  public void setLatestVersions(boolean latestVersions) {
+    pchange.firePropertyChange("latestVersions", this.latestVersions, this.latestVersions = latestVersions);
+  }
+
   public void setDefaults(ILaunchConfigurationWorkingCopy config) {
     config.setAttribute(HOST, DEF_HOST);
     config.setAttribute(PORT, DEF_PORT);
@@ -145,6 +153,7 @@ public class JenkinsLaunchConfig implements Serializable {
       setMainPlugin(config.getAttribute(MAINPLUGIN, ""));
       setIncludeTestScope(config.getAttribute(INCLUDETESTSCOPE, false));
       setIncludeOptional(config.getAttribute(INCLUDEOPTIONAL, false));
+      setLatestVersions(config.getAttribute(LATESTVERSIONS, false));
       getPlugins().clear();
       getPlugins().addAll(config.getAttribute(PLUGINS, Collections.<String> emptyList()));
     } catch (CoreException e) {
@@ -162,6 +171,7 @@ public class JenkinsLaunchConfig implements Serializable {
     setAttribute(config, PLUGINS, getPlugins());
     config.setAttribute(INCLUDETESTSCOPE, isIncludeTestScope());
     config.setAttribute(INCLUDEOPTIONAL, isIncludeOptional());
+    config.setAttribute(LATESTVERSIONS, isLatestVersions());
   }
 
   private static void setAttribute(ILaunchConfigurationWorkingCopy config, String name, Set<String> set) {
