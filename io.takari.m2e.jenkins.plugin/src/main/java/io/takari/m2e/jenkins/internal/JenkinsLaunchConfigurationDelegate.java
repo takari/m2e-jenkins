@@ -34,6 +34,7 @@ import io.takari.m2e.jenkins.JenkinsPlugin;
 import io.takari.m2e.jenkins.launcher.desc.Descriptor;
 import io.takari.m2e.jenkins.launcher.desc.PluginDesc;
 import io.takari.m2e.jenkins.runtime.JenkinsRuntimePlugin;
+import io.takari.m2e.jenkins.runtime.PluginUpdateCenter;
 
 @SuppressWarnings("restriction")
 public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfigurationDelegate {
@@ -169,10 +170,21 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
 
     Map<ArtifactKey, DependencyContainer> dependencyPlugins = new HashMap<>();
 
+    PluginUpdateCenter updates = null;
+    if (config.isLatestVersions()) {
+      try {
+        monitor.subTask("Getting list of latest plugin versions");
+        updates = new PluginUpdateCenter();
+      } catch (IOException e) {
+        JenkinsPlugin.error("Cannot talk to update center", e);
+        updates = null;
+      }
+    }
+
     for (JenkinsPluginProject jp : projects.values()) {
 
       // collect dependency plugins, but take the highest version
-      List<PluginDependency> deps = jp.findPluginDependencies(monitor);
+      List<PluginDependency> deps = jp.findPluginDependencies(monitor, updates);
       for (PluginDependency dep : deps) {
         IJenkinsPlugin pd = dep.getPlugin();
         ArtifactKey ak = new ArtifactKey(pd.getGroupId(), pd.getArtifactId(), null, null);

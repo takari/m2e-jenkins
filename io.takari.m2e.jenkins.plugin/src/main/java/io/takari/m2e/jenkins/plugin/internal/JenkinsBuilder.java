@@ -23,15 +23,16 @@ public class JenkinsBuilder extends IncrementalProjectBuilder {
   protected IProject[] build(int kind, Map<String, String> args, IProgressMonitor monitor) throws CoreException {
 
     JenkinsPluginProject jp = JenkinsPluginProject.create(getProject(), monitor);
-
-    if (kind == IncrementalProjectBuilder.FULL_BUILD) {
-      fullBuild(jp, monitor);
-    } else {
-      IResourceDelta delta = getDelta(getProject());
-      if (delta == null) {
+    if (jp != null) {
+      if (kind == IncrementalProjectBuilder.FULL_BUILD) {
         fullBuild(jp, monitor);
       } else {
-        incrementalBuild(jp, delta, monitor);
+        IResourceDelta delta = getDelta(getProject());
+        if (delta == null) {
+          fullBuild(jp, monitor);
+        } else {
+          incrementalBuild(jp, delta, monitor);
+        }
       }
     }
     return null;

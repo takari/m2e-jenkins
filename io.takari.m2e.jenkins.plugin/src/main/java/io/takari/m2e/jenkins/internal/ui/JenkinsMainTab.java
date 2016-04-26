@@ -53,6 +53,7 @@ public class JenkinsMainTab extends JavaLaunchTab {
   private Button btnIncludeTestScope;
   private Button btnIncludeOptionalTransitive;
   private Button btnDisableCaches;
+  private Button btnLatestVersions;
 
   public JenkinsMainTab() {
     projects = JenkinsPluginProject.getProjects(new NullProgressMonitor());
@@ -179,6 +180,10 @@ public class JenkinsMainTab extends JavaLaunchTab {
     new Label(grpPlugins, SWT.NONE);
     btnIncludeOptionalTransitive = new Button(grpPlugins, SWT.CHECK);
     btnIncludeOptionalTransitive.setText("Include optional transitive plugins");
+    new Label(grpPlugins, SWT.NONE);
+
+    btnLatestVersions = new Button(grpPlugins, SWT.CHECK);
+    btnLatestVersions.setText("Use latest available plugin versions");
 
     updateCombo();
 
@@ -267,6 +272,12 @@ public class JenkinsMainTab extends JavaLaunchTab {
     IObservableValue includeOptionalConfigObserveValue = BeanProperties.value("includeOptional").observe(config);
     bindingContext.bindValue(observeSelectionBtnIncludeOptionalTransitiveObserveWidget,
         includeOptionalConfigObserveValue, null, null);
+    //
+    IObservableValue observeSelectionBtnLatestVersionsObserveWidget = WidgetProperties.selection()
+        .observe(btnLatestVersions);
+    IObservableValue latestVersionsConfigObserveValue = BeanProperties.value("latestVersions").observe(config);
+    bindingContext.bindValue(observeSelectionBtnLatestVersionsObserveWidget, latestVersionsConfigObserveValue, null,
+        null);
     //
     return bindingContext;
   }

@@ -43,6 +43,7 @@ import io.takari.m2e.jenkins.JenkinsPlugin;
 import io.takari.m2e.jenkins.internal.idx.AnnotationIndexer;
 import io.takari.m2e.jenkins.internal.idx.HudsonAnnIndexer;
 import io.takari.m2e.jenkins.internal.idx.SezpozIndexer;
+import io.takari.m2e.jenkins.runtime.PluginUpdateCenter;
 
 public class JenkinsPluginProject implements IJenkinsPlugin {
 
@@ -137,7 +138,7 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     return res;
   }
 
-  public List<PluginDependency> findPluginDependencies(IProgressMonitor monitor)
+  public List<PluginDependency> findPluginDependencies(IProgressMonitor monitor, final PluginUpdateCenter updates)
       throws CoreException {
     final IMaven maven = MavenPlugin.getMaven();
 
@@ -151,13 +152,16 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
         for (Artifact art : mp.getArtifacts()) {
           if (monitor.isCanceled())
             break;
-          IJenkinsPlugin jp = resolvePlugin(art.getGroupId(), art.getArtifactId(), art.getVersion(), mp,
+
+          ArtifactKey ak = getPlugin(updates, art.getGroupId(), art.getArtifactId(), art.getVersion());
+
+          IJenkinsPlugin jp = resolvePlugin(ak.getGroupId(), ak.getArtifactId(), ak.getVersion(), mp,
               context, monitor);
           if (jp != null) {
             deps.add(new PluginDependency(jp, isTestScope(art.getScope()), false));
           }
         }
-        return correctVersions(deps, context, monitor);
+        return correctVersions(deps, context, updates, monitor);
       }
 
     }, monitor);
@@ -211,9 +215,8 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     return res.getProject();
   }
 
-  protected List<PluginDependency> correctVersions(List<PluginDependency> plugins,
-      IMavenExecutionContext context,
-      IProgressMonitor monitor) throws CoreException {
+  protected List<PluginDependency> correctVersions(List<PluginDependency> plugins, IMavenExecutionContext context,
+      PluginUpdateCenter updates, IProgressMonitor monitor) throws CoreException {
     
     // transitive dependency plugins might contain optional dependencies on other 
     // plugins and will not be happy if older versions of such dependencies are
@@ -246,9 +249,11 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
         boolean considerAsTestScope = pd.isTestScope() || isTestScope(dep.getScope());
         boolean testScope = existingIsTestScope && considerAsTestScope;
 
-        ArtifactVersion dver = ver(dep);
+        ArtifactVersion dver = ver(dep.getVersion());
 
-        IJenkinsPlugin newJp = resolvePlugin(dep.getGroupId(), dep.getArtifactId(), dver.toString(), mp, context,
+        ArtifactKey ak = getPlugin(updates, dep.getGroupId(), dep.getArtifactId(), dver.toString());
+
+        IJenkinsPlugin newJp = resolvePlugin(ak.getGroupId(), ak.getArtifactId(), ak.getVersion(), mp, context,
             monitor);
 
         if (dc == null && newJp == null)
@@ -281,8 +286,23 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     return result;
   }
 
-  private static ArtifactVersion ver(Dependency dep) {
-    return ver(dep.getVersion());
+  private static ArtifactKey getPlugin(PluginUpdateCenter updates, String groupId, String artifactId, String version) {
+    if (updates != null) {
+      String newVersion = updates.getVersion(groupId, artifactId);
+      if (newVersion == null && groupId.equals("org.jvnet.hudson.plugins")) {
+        // try with new groupId
+        String newGroupId = "org.jenkins-ci.plugins";
+        newVersion = updates.getVersion(newGroupId, artifactId);
+        if (newVersion != null) {
+          groupId = newGroupId;
+        }
+      }
+
+      if (newVersion != null) {
+        version = newVersion;
+      }
+    }
+    return new ArtifactKey(groupId, artifactId, version, null);
   }
 
   private static ArtifactVersion ver(String ver) {
