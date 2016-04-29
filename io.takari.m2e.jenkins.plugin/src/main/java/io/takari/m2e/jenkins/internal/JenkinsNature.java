@@ -14,7 +14,6 @@ import org.jboss.tools.maven.apt.preferences.AnnotationProcessingMode;
 import org.jboss.tools.maven.apt.preferences.IPreferencesManager;
 
 import io.takari.m2e.jenkins.JenkinsPlugin;
-import io.takari.m2e.jenkins.plugin.internal.JenkinsBuilder;
 
 public class JenkinsNature implements IProjectNature {
 

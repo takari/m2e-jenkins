@@ -1,19 +1,20 @@
-package io.takari.m2e.jenkins.plugin.internal;
+package io.takari.m2e.jenkins.internal;
 
 import java.util.Map;
 
 import org.eclipse.core.resources.ICommand;
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 
 import io.takari.m2e.jenkins.JenkinsPlugin;
-import io.takari.m2e.jenkins.internal.JenkinsPluginProject;
 
 public class JenkinsBuilder extends IncrementalProjectBuilder {
 
@@ -77,10 +78,9 @@ public class JenkinsBuilder extends IncrementalProjectBuilder {
     }
 
     jp.processAnnotations(monitor, delta);
-    /*
-     * ResourcesPlugin.getWorkspace().getRoot().getFolder(jp.getFacade().
-     * getOutputLocation()) .refreshLocal(IResource.DEPTH_INFINITE, monitor);
-     */
+
+    IFolder target = ResourcesPlugin.getWorkspace().getRoot().getFolder(jp.getFacade().getOutputLocation());
+    target.refreshLocal(IResource.DEPTH_INFINITE, monitor);
   }
 
   public static void add(IProject project) throws CoreException {

@@ -72,7 +72,7 @@
       <builder
             hasNature="true">
          <run
-               class="io.takari.m2e.jenkins.plugin.internal.JenkinsBuilder">
+               class="io.takari.m2e.jenkins.internal.JenkinsBuilder">
          </run></builder>
    </extension>
 

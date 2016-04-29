@@ -142,6 +142,7 @@ public class Main {
 
     DefaultHandler defaultHandler = new DefaultHandler();
     RequestLogHandler requestLogHandler = new RequestLogHandler();
+    requestLogHandler.setRequestLog(new JenkinsRequestLog());
 
     ContextHandlerCollection contexts = (ContextHandlerCollection) server
         .getChildHandlerByClass(ContextHandlerCollection.class);
