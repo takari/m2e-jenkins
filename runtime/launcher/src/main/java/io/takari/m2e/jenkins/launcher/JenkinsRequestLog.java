@@ -21,8 +21,18 @@ public class JenkinsRequestLog extends AbstractLifeCycle implements RequestLog {
       return;
 
     // skip those to prevent flooding the console
-    if (pathInfo.endsWith("/ajaxBuildQueue") || pathInfo.endsWith("/ajaxExecutors"))
+    if (pathInfo.endsWith("/ajaxBuildQueue") //
+        || pathInfo.endsWith("/ajaxExecutors") //
+        || pathInfo.endsWith("/buildHistory/ajax")) //
       return;
+
+    if (response.getStatus() == 404) {
+      String reason = response.getReason();
+      if (reason != null)
+        reason = ": " + reason;
+      log.info(pathInfo + " " + response.getStatus() + reason);
+      return;
+    }
 
     int staplerIdx = -1;
     String headerName = null;
