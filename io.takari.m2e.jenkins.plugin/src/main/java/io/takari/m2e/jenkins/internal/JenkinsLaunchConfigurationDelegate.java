@@ -161,7 +161,7 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
 
       PluginDesc pd = new PluginDesc();
       pd.setId(jp.getFacade().getArtifactKey().getArtifactId());
-      pd.setPluginFile(jp.getPluginFile(monitor).getAbsolutePath());
+      pd.setPluginFile(jp.getPluginFile(monitor, true).getAbsolutePath());
       pd.setResources(jp.getResources(monitor));
       desc.getPlugins().add(pd);
 
@@ -218,7 +218,7 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
 
       PluginDesc pd = new PluginDesc();
       pd.setId(jp.getArtifactId());
-      pd.setPluginFile(jp.getPluginFile(monitor).getAbsolutePath());
+      pd.setPluginFile(jp.getPluginFile(monitor, true).getAbsolutePath());
       pd.setResources(jp.getResources(monitor));
       desc.getPlugins().add(pd);
     }

@@ -16,7 +16,7 @@ public interface IJenkinsPlugin {
 
   MavenProject getMavenProject(IProgressMonitor monitor) throws CoreException;
 
-  File getPluginFile(IProgressMonitor monitor) throws CoreException;
+  File getPluginFile(IProgressMonitor monitor, boolean regenerate) throws CoreException;
 
   List<String> getResources(IProgressMonitor monitor) throws CoreException;
 

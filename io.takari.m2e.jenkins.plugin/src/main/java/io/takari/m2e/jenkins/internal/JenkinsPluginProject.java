@@ -93,12 +93,12 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
   }
 
   @Override
-  public File getPluginFile(IProgressMonitor monitor) throws CoreException {
+  public File getPluginFile(IProgressMonitor monitor, boolean regenerate) throws CoreException {
     // assume that test-hpl mojo writes the file
     File testDir = new File(getMavenProject(monitor).getBuild().getTestOutputDirectory());
     File hpl = new File(testDir, "the.hpl");
 
-    if (!hpl.exists()) {
+    if (regenerate || !hpl.exists()) {
       monitor.subTask("Generating .hpl for " + facade.getProject().getName());
       executeMojo(HPI_PLUGIN_GROUP_ID, HPI_PLUGIN_ARTIFACT_ID, "test-hpl", monitor);
     }
