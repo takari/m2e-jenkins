@@ -44,7 +44,11 @@ public class JenkinsBuilder extends IncrementalProjectBuilder {
 
     // will be called by maven
     // jp.generateMessages(monitor);
-    jp.processAnnotations(monitor);
+    try {
+      jp.processAnnotations(monitor);
+    } catch (CoreException e) {
+      JenkinsPlugin.error("Error processing annotations", e);
+    }
   }
 
   private void incrementalBuild(JenkinsPluginProject jp, IResourceDelta delta, IProgressMonitor monitor)
@@ -77,7 +81,11 @@ public class JenkinsBuilder extends IncrementalProjectBuilder {
       jp.generateMessages(monitor);
     }
 
-    jp.processAnnotations(monitor, delta);
+    try {
+      jp.processAnnotations(monitor, delta);
+    } catch (CoreException e) {
+      JenkinsPlugin.error("Error processing annotations", e);
+    }
 
     IFolder target = ResourcesPlugin.getWorkspace().getRoot().getFolder(jp.getFacade().getOutputLocation());
     target.refreshLocal(IResource.DEPTH_INFINITE, monitor);
@@ -100,7 +108,7 @@ public class JenkinsBuilder extends IncrementalProjectBuilder {
       command.setBuilderName(ID);
       ICommand[] newCommands = new ICommand[commands.length + 1];
 
-      // Add it before other builders.
+      // Add it after other builders.
       System.arraycopy(commands, 0, newCommands, 0, commands.length);
       newCommands[commands.length] = command;
       desc.setBuildSpec(newCommands);

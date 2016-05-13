@@ -1,6 +1,7 @@
 package io.takari.m2e.jenkins.internal.idx;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,6 +16,8 @@ import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.compiler.CharOperation;
@@ -27,6 +30,7 @@ import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding;
 import org.eclipse.m2e.core.MavenPlugin;
 import org.eclipse.m2e.core.project.IMavenProjectFacade;
 
+import io.takari.m2e.jenkins.JenkinsPlugin;
 import net.java.sezpoz.impl.SerAnnotatedElement;
 import net.java.sezpoz.impl.SezpozFactory;
 
@@ -49,7 +53,7 @@ public class SezpozIndexer extends AnnotationIndexer {
   }
 
   @Override
-  protected void collectType(ReferenceBinding type, AnnotationBinding ann) {
+  protected void collectType(ReferenceBinding type, AnnotationBinding ann) throws CoreException {
     index(name(type), null, false, ann);
 
   }
@@ -59,16 +63,16 @@ public class SezpozIndexer extends AnnotationIndexer {
   }
 
   @Override
-  protected void collectField(ReferenceBinding type, String name, AnnotationBinding ann) {
+  protected void collectField(ReferenceBinding type, String name, AnnotationBinding ann) throws CoreException {
     index(name(type), name, false, ann);
   }
 
   @Override
-  protected void collectMethod(ReferenceBinding type, String name, AnnotationBinding ann) {
+  protected void collectMethod(ReferenceBinding type, String name, AnnotationBinding ann) throws CoreException {
     index(name(type), name, true, ann);
   }
 
-  private void index(String className, String memberName, boolean isMethod, AnnotationBinding ann) {
+  private void index(String className, String memberName, boolean isMethod, AnnotationBinding ann) throws CoreException {
     ReferenceBinding annType = ann.getAnnotationType();
 
     String name = String.valueOf(annType.readableName());
@@ -80,7 +84,7 @@ public class SezpozIndexer extends AnnotationIndexer {
     l.add(SezpozFactory.createAnnotatedElement(className, memberName, isMethod, translate(ann, annType)));
   }
 
-  private TreeMap<String, Object> translate(AnnotationBinding ann, ReferenceBinding annType) {
+  private TreeMap<String, Object> translate(AnnotationBinding ann, ReferenceBinding annType) throws CoreException {
 
     TreeMap<String, Object> values = new TreeMap<>();
 
@@ -103,7 +107,7 @@ public class SezpozIndexer extends AnnotationIndexer {
     return values;
   }
 
-  private Object translate(Object value) {
+  private Object translate(Object value) throws CoreException {
     if (value.getClass().isArray()) {
       Object[] varr = (Object[]) value;
       List<Object> data = new ArrayList<>();
@@ -134,7 +138,7 @@ public class SezpozIndexer extends AnnotationIndexer {
       return constantValue((Constant) value);
     }
 
-    throw new IllegalStateException("Unknown annotation parameter type " + value);
+    throw new CoreException(new Status(IStatus.ERROR, JenkinsPlugin.ID, "Unknown annotation parameter type " + value));
   }
 
   private Object constantValue(Constant constant) {
@@ -215,8 +219,10 @@ public class SezpozIndexer extends AnnotationIndexer {
     File dir = new File(mp.getBuild().getOutputDirectory(), "META-INF/annotations");
     try {
       SezpozFactory.write(index, dir);
+    } catch (FileNotFoundException e) {
+      JenkinsPlugin.warning("Cannot write annotation index", e);
     } catch (IOException e) {
-      throw new IllegalStateException("Error writing sezpoz index", e);
+      throw new CoreException(new Status(IStatus.ERROR, JenkinsPlugin.ID, "Error writing sezpoz index", e));
     }
   }
 

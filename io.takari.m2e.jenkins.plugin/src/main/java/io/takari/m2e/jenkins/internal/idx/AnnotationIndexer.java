@@ -70,11 +70,11 @@ public abstract class AnnotationIndexer {
 
   protected abstract boolean isAffectedByDelta(IMavenProjectFacade facade, IResourceDelta delta);
 
-  protected abstract void collectType(ReferenceBinding type, AnnotationBinding ann);
+  protected abstract void collectType(ReferenceBinding type, AnnotationBinding ann) throws CoreException;
 
-  protected abstract void collectField(ReferenceBinding type, String name, AnnotationBinding ann);
+  protected abstract void collectField(ReferenceBinding type, String name, AnnotationBinding ann) throws CoreException;
 
-  protected abstract void collectMethod(ReferenceBinding type, String name, AnnotationBinding ann);
+  protected abstract void collectMethod(ReferenceBinding type, String name, AnnotationBinding ann) throws CoreException;
 
   private boolean isIndexedAnnotation(AnnotationBinding ann) {
     AnnotationBinding[] annanns = ann.getAnnotationType().getAnnotations();

@@ -28,5 +28,6 @@ Require-Bundle: org.eclipse.core.resources,
  com.ibm.icu,
  com.ifedorenko.m2e.sourcelookup;resolution:=optional,
  org.jboss.tools.maven.apt.core,
- org.eclipse.jdt.apt.core
+ org.eclipse.jdt.apt.core,
+ io.takari.m2e.jdt.core;resolution:=optional
 Bundle-Activator: io.takari.m2e.jenkins.JenkinsPlugin

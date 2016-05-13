@@ -1,8 +1,8 @@
 package io.takari.m2e.jenkins.internal.idx;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,6 +20,8 @@ import org.eclipse.jdt.internal.compiler.lookup.AnnotationBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding;
 import org.eclipse.m2e.core.MavenPlugin;
 import org.eclipse.m2e.core.project.IMavenProjectFacade;
+
+import io.takari.m2e.jenkins.JenkinsPlugin;
 
 @SuppressWarnings("restriction")
 public class HudsonAnnIndexer extends AnnotationIndexer {
@@ -83,8 +85,8 @@ public class HudsonAnnIndexer extends AnnotationIndexer {
           w.close();
         }
       }
-    } catch (IOException e) {
-      throw new IllegalStateException("Error writing annotation index", e);
+    } catch (FileNotFoundException e) {
+      JenkinsPlugin.warning("Cannot write annotation index", e);
     }
   }
 

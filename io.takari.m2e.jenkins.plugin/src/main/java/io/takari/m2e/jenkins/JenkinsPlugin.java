@@ -34,4 +34,16 @@ public class JenkinsPlugin extends Plugin {
     getInstance().getLog().log(new Status(IStatus.ERROR, ID, message));
   }
 
+  public static void warning(String message, Throwable t) {
+    getInstance().getLog().log(new Status(IStatus.WARNING, ID, message, t));
+  }
+
+  public static void warning(String message) {
+    getInstance().getLog().log(new Status(IStatus.WARNING, ID, message));
+  }
+
+  public static void info(String message) {
+    getInstance().getLog().log(new Status(IStatus.INFO, ID, message));
+  }
+
 }

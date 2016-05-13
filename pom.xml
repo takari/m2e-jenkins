@@ -34,14 +34,19 @@
       <url>http://download.eclipse.org/cbi/updates/license</url>
     </repository>
     <repository>
-      <id>m2e-sourcelookup</id>
-      <layout>p2</layout>
-      <url>https://repository.takari.io/content/sites/m2e.extras/sourcelookup/1.1.0/N/LATEST/</url>
-    </repository>
-    <repository>
       <id>m2e-apt</id>
       <layout>p2</layout>
       <url>http://download.jboss.org/jbosstools/updates/m2e-extensions/m2e-apt</url>
+    </repository>
+    <repository>
+      <id>m2e-takari</id>
+      <layout>p2</layout>
+      <url>${repoHost}/content/sites/m2e.extras/m2eclipse-takari-lifecycle/0.1.0/N/LATEST/</url>
+    </repository>
+    <repository>
+      <id>m2e-sourcelookup</id>
+      <layout>p2</layout>
+      <url>${repoHost}/content/sites/m2e.extras/sourcelookup/1.1.0/N/LATEST/</url>
     </repository>
   </repositories>
 
