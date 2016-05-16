@@ -1,4 +1,4 @@
-package io.takari.m2e.jenkins.internal;
+package io.takari.m2e.jenkins;
 
 import java.io.File;
 import java.util.Collections;

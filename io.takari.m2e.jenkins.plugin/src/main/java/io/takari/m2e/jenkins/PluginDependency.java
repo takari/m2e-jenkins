@@ -1,4 +1,4 @@
-package io.takari.m2e.jenkins.internal;
+package io.takari.m2e.jenkins;
 
 public class PluginDependency {
   private IJenkinsPlugin plugin;

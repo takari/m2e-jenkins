@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <lifecycleMappingMetadata>
   <pluginExecutions>
+  
     <!-- override test-hpl config to perform additional project configuration -->
     <pluginExecution>
       <pluginExecutionFilter>
@@ -18,6 +19,22 @@
       </action>
     </pluginExecution>
 
+    <pluginExecution>
+      <pluginExecutionFilter>
+        <groupId>org.jvnet.localizer</groupId>
+        <artifactId>maven-localizer-plugin</artifactId>
+        <versionRange>[1.0,)</versionRange>
+        <goals>
+          <goal>generate</goal>
+        </goals>
+      </pluginExecutionFilter>
+      <action>
+        <configurator>
+          <id>io.takari.m2e.jenkins.plugin.localizerConfigurator</id>
+        </configurator>
+      </action>
+    </pluginExecution>
+    
     <!-- maven-hpi-plugin includes that since 1.87 -->
     <pluginExecution>
       <pluginExecutionFilter>
@@ -31,29 +48,13 @@
         </goals>
       </pluginExecutionFilter>
       <action>
-        <!-- <ignore /> -->
         <execute>
           <runOnIncremental>false</runOnIncremental>
           <runOnConfiguration>true</runOnConfiguration>
         </execute>
       </action>
     </pluginExecution>
-    <pluginExecution>
-      <pluginExecutionFilter>
-        <groupId>org.jvnet.localizer</groupId>
-        <artifactId>maven-localizer-plugin</artifactId>
-        <versionRange>[1.0,)</versionRange>
-        <goals>
-          <goal>generate</goal>
-        </goals>
-      </pluginExecutionFilter>
-      <action>
-        <execute>
-          <runOnIncremental>false</runOnIncremental>
-          <runOnConfiguration>true</runOnConfiguration>
-        </execute>
-      </action>
-    </pluginExecution>
+    
     <pluginExecution>
       <pluginExecutionFilter>
         <groupId>org.apache.maven.plugins</groupId>
@@ -61,11 +62,42 @@
         <versionRange>[1.0,)</versionRange>
         <goals>
           <goal>javadoc</goal>
+          <goal>javadoc-no-fork</goal>
         </goals>
       </pluginExecutionFilter>
       <action>
         <ignore />
       </action>
     </pluginExecution>
+    
+    <pluginExecution>
+      <pluginExecutionFilter>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <versionRange>[1.0,)</versionRange>
+        <goals>
+          <goal>display-info</goal>
+        </goals>
+      </pluginExecutionFilter>
+      <action>
+        <ignore />
+      </action>
+    </pluginExecution>
+    
+    <pluginExecution>
+      <pluginExecutionFilter>
+        <groupId>org.codehaus.gmaven</groupId>
+        <artifactId>gmaven-plugin</artifactId>
+        <versionRange>[1.0,)</versionRange>
+        <goals>
+          <goal>testCompile</goal>
+          <goal>generateTestStubs</goal>
+        </goals>
+      </pluginExecutionFilter>
+      <action>
+        <ignore />
+      </action>
+    </pluginExecution>
+    
   </pluginExecutions>
 </lifecycleMappingMetadata>

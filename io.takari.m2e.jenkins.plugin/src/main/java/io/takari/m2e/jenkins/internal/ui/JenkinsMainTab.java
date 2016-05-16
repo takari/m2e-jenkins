@@ -29,8 +29,8 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
-import io.takari.m2e.jenkins.internal.JenkinsLaunchConfig;
-import io.takari.m2e.jenkins.internal.JenkinsPluginProject;
+import io.takari.m2e.jenkins.JenkinsPluginProject;
+import io.takari.m2e.jenkins.internal.launch.JenkinsLaunchConfig;
 import io.takari.m2e.jenkins.internal.ui.databinding.IntegerToStringConverter;
 import io.takari.m2e.jenkins.internal.ui.databinding.IntegerValidator;
 import io.takari.m2e.jenkins.internal.ui.databinding.SetSelectionObservable;

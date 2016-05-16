@@ -30,7 +30,7 @@ import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding;
 import org.eclipse.m2e.core.MavenPlugin;
 import org.eclipse.m2e.core.project.IMavenProjectFacade;
 
-import io.takari.m2e.jenkins.JenkinsPlugin;
+import io.takari.m2e.jenkins.internal.JenkinsPlugin;
 import net.java.sezpoz.impl.SerAnnotatedElement;
 import net.java.sezpoz.impl.SezpozFactory;
 

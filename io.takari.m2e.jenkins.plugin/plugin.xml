@@ -4,7 +4,7 @@
    <extension
          point="org.eclipse.debug.core.launchConfigurationTypes">
       <launchConfigurationType
-            delegate="io.takari.m2e.jenkins.internal.JenkinsLaunchConfigurationDelegate"
+            delegate="io.takari.m2e.jenkins.internal.launch.JenkinsLaunchConfigurationDelegate"
             id="io.takari.m2e.jenkins.plugin.launching.jenkins"
             modes="run,debug"
             name="Jenkins"
@@ -36,6 +36,11 @@
             name="HPI"
             runsBefore="org.jboss.tools.maven.apt.MavenCompilerAptProjectConfigurator">
       </configurator>
+      <configurator
+            class="io.takari.m2e.jenkins.internal.JenkinsLocalizerProjectConfigurator"
+            id="io.takari.m2e.jenkins.plugin.localizerConfigurator"
+            name="Localizer">
+      </configurator>
    </extension>
    <extension
          point="org.eclipse.m2e.core.lifecycleMappingMetadataSource">
@@ -59,18 +64,13 @@
                class="io.takari.m2e.jenkins.internal.JenkinsNature">
          </run>
       </runtime>
-      <builder
-            id="io.takari.m2e.jenkins.plugin.builder">
-      </builder>
-      <requires-nature
-            id="org.eclipse.m2e.core.maven2Nature">
-      </requires-nature>
    </extension>
    <extension
          id="builder"
+         name="Jenkins builder"
          point="org.eclipse.core.resources.builders">
       <builder
-            hasNature="true">
+            hasNature="false">
          <run
                class="io.takari.m2e.jenkins.internal.JenkinsBuilder">
          </run></builder>

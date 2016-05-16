@@ -1,4 +1,4 @@
-package io.takari.m2e.jenkins;
+package io.takari.m2e.jenkins.internal;
 
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Plugin;

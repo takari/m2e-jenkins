@@ -1,4 +1,4 @@
-package io.takari.m2e.jenkins.internal;
+package io.takari.m2e.jenkins.internal.launch;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,7 +30,10 @@ import org.eclipse.m2e.core.embedder.ArtifactKey;
 import org.eclipse.m2e.core.internal.Bundles;
 import org.osgi.framework.Bundle;
 
-import io.takari.m2e.jenkins.JenkinsPlugin;
+import io.takari.m2e.jenkins.IJenkinsPlugin;
+import io.takari.m2e.jenkins.JenkinsPluginProject;
+import io.takari.m2e.jenkins.PluginDependency;
+import io.takari.m2e.jenkins.internal.JenkinsPlugin;
 import io.takari.m2e.jenkins.launcher.desc.Descriptor;
 import io.takari.m2e.jenkins.launcher.desc.PluginDesc;
 import io.takari.m2e.jenkins.runtime.JenkinsRuntimePlugin;

@@ -8,13 +8,15 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceDelta;
-import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 
-import io.takari.m2e.jenkins.JenkinsPlugin;
+import io.takari.m2e.jenkins.JenkinsPluginProject;
+import io.takari.m2e.jenkins.internal.idx.AnnotationIndexer;
+import io.takari.m2e.jenkins.internal.idx.HudsonAnnIndexer;
+import io.takari.m2e.jenkins.internal.idx.SezpozIndexer;
 
 public class JenkinsBuilder extends IncrementalProjectBuilder {
 
@@ -25,70 +27,28 @@ public class JenkinsBuilder extends IncrementalProjectBuilder {
 
     JenkinsPluginProject jp = JenkinsPluginProject.create(getProject(), monitor);
     if (jp != null) {
-      if (kind == IncrementalProjectBuilder.FULL_BUILD) {
-        fullBuild(jp, monitor);
-      } else {
-        IResourceDelta delta = getDelta(getProject());
-        if (delta == null) {
-          fullBuild(jp, monitor);
+      try {
+
+        if (kind == IncrementalProjectBuilder.FULL_BUILD) {
+          processAnnotations(jp, null, monitor);
         } else {
-          incrementalBuild(jp, delta, monitor);
+          IResourceDelta delta = getDelta(getProject());
+          processAnnotations(jp, delta, monitor);
         }
+
+        IFolder target = ResourcesPlugin.getWorkspace().getRoot().getFolder(jp.getFacade().getOutputLocation());
+        target.refreshLocal(IResource.DEPTH_INFINITE, monitor);
+
+      } catch (CoreException e) {
+        JenkinsPlugin.error("Error processing annotations", e);
       }
     }
     return null;
   }
 
-  private void fullBuild(JenkinsPluginProject jp, IProgressMonitor monitor) throws CoreException {
-    // TODO Auto-generated method stub
-
-    // will be called by maven
-    // jp.generateMessages(monitor);
-    try {
-      jp.processAnnotations(monitor);
-    } catch (CoreException e) {
-      JenkinsPlugin.error("Error processing annotations", e);
-    }
-  }
-
-  private void incrementalBuild(JenkinsPluginProject jp, IResourceDelta delta, IProgressMonitor monitor)
+  public void processAnnotations(JenkinsPluginProject jp, IResourceDelta delta, IProgressMonitor monitor)
       throws CoreException {
-
-    final String fileMask = jp.getLocalizerMojoParameter("generate", "fileMask", String.class, monitor);
-    final boolean[] messagesChanged = new boolean[] { false };
-
-    delta.accept(new IResourceDeltaVisitor() {
-      @Override
-      public boolean visit(IResourceDelta delta) throws CoreException {
-        IResource res = delta.getResource();
-        if (!messagesChanged[0] && res.getType() == IResource.FILE) {
-
-          String name = res.getName();
-
-          if (!name.endsWith(".properties") || name.contains("_"))
-            return true;
-
-          if (fileMask != null && !name.equals(fileMask))
-            return true;
-
-          messagesChanged[0] = true;
-        }
-        return true;
-      }
-    });
-
-    if (messagesChanged[0]) {
-      jp.generateMessages(monitor);
-    }
-
-    try {
-      jp.processAnnotations(monitor, delta);
-    } catch (CoreException e) {
-      JenkinsPlugin.error("Error processing annotations", e);
-    }
-
-    IFolder target = ResourcesPlugin.getWorkspace().getRoot().getFolder(jp.getFacade().getOutputLocation());
-    target.refreshLocal(IResource.DEPTH_INFINITE, monitor);
+    AnnotationIndexer.process(jp.getFacade(), delta, monitor, new SezpozIndexer(), new HudsonAnnIndexer());
   }
 
   public static void add(IProject project) throws CoreException {

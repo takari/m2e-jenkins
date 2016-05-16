@@ -1,4 +1,4 @@
-package io.takari.m2e.jenkins.internal;
+package io.takari.m2e.jenkins;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -26,8 +26,6 @@ import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuildingRequest;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
@@ -39,10 +37,7 @@ import org.eclipse.m2e.core.embedder.IMaven;
 import org.eclipse.m2e.core.embedder.IMavenExecutionContext;
 import org.eclipse.m2e.core.project.IMavenProjectFacade;
 
-import io.takari.m2e.jenkins.JenkinsPlugin;
-import io.takari.m2e.jenkins.internal.idx.AnnotationIndexer;
-import io.takari.m2e.jenkins.internal.idx.HudsonAnnIndexer;
-import io.takari.m2e.jenkins.internal.idx.SezpozIndexer;
+import io.takari.m2e.jenkins.internal.JenkinsPlugin;
 import io.takari.m2e.jenkins.runtime.PluginUpdateCenter;
 
 public class JenkinsPluginProject implements IJenkinsPlugin {
@@ -51,8 +46,6 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
   private static final String TYPE_JPI = "jpi";
   private static final String HPI_PLUGIN_GROUP_ID = "org.jenkins-ci.tools";
   private static final String HPI_PLUGIN_ARTIFACT_ID = "maven-hpi-plugin";
-  private static final String LOCALIZER_PLUGIN_GROUP_ID = "org.jvnet.localizer";
-  private static final String LOCALIZER_PLUGIN_ARTIFACT_ID = "maven-localizer-plugin";
 
   private IMavenProjectFacade facade;
   private MavenProject mavenProject;
@@ -104,12 +97,6 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     }
 
     return hpl;
-  }
-
-  public void generateMessages(IProgressMonitor monitor) throws CoreException {
-    executeMojo(LOCALIZER_PLUGIN_GROUP_ID, LOCALIZER_PLUGIN_ARTIFACT_ID, "generate", monitor);
-    String output = getLocalizerMojoParameter("generate", "outputDirectory", String.class, monitor);
-    facade.getProject().getFolder(output).refreshLocal(IResource.DEPTH_INFINITE, monitor);
   }
 
   public void executeMojo(String groupId, String artifactId, String goal, IProgressMonitor monitor)
@@ -371,7 +358,8 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
   public Artifact findJenkinsWar(IProgressMonitor monitor, boolean download)
       throws CoreException {
 
-    String jenkinsWarId = getHPIMojoParameter("test-hpl", "jenkinsWarId", String.class, monitor);
+    String jenkinsWarId = getMojoParameter(HPI_PLUGIN_GROUP_ID, HPI_PLUGIN_ARTIFACT_ID, "test-hpl", "jenkinsWarId",
+        String.class, monitor);
 
     MavenProject mp = getMavenProject(monitor);
     Set<Artifact> artifacts = mp.getArtifacts();
@@ -402,17 +390,7 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     return null;
   }
 
-  public <T> T getHPIMojoParameter(String goal, String parameter, Class<T> asType, IProgressMonitor monitor)
-      throws CoreException {
-    return getMojoParameter(HPI_PLUGIN_GROUP_ID, HPI_PLUGIN_ARTIFACT_ID, goal, parameter, asType, monitor);
-  }
-
-  public <T> T getLocalizerMojoParameter(String goal, String parameter, Class<T> asType, IProgressMonitor monitor)
-      throws CoreException {
-    return getMojoParameter(LOCALIZER_PLUGIN_GROUP_ID, LOCALIZER_PLUGIN_ARTIFACT_ID, goal, parameter, asType, monitor);
-  }
-
-  protected <T> T getMojoParameter(String groupId, String artifactId, String goal, String parameter, Class<T> asType,
+  public <T> T getMojoParameter(String groupId, String artifactId, String goal, String parameter, Class<T> asType,
       IProgressMonitor monitor) throws CoreException {
     List<MojoExecution> mojoExecutions = facade.getMojoExecutions(groupId, artifactId, monitor,
         goal);
@@ -426,14 +404,6 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
       }
     }
     return null;
-  }
-
-  public void processAnnotations(IProgressMonitor monitor) throws CoreException {
-    processAnnotations(monitor, null);
-  }
-
-  public void processAnnotations(IProgressMonitor monitor, IResourceDelta delta) throws CoreException {
-    AnnotationIndexer.process(facade, delta, monitor, new SezpozIndexer(), new HudsonAnnIndexer());
   }
 
   public static JenkinsPluginProject create(IProject project, IProgressMonitor monitor) {

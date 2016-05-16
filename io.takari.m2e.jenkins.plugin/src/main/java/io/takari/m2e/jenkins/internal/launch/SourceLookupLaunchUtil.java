@@ -1,4 +1,4 @@
-package io.takari.m2e.jenkins.internal;
+package io.takari.m2e.jenkins.internal.launch;
 
 import java.util.ArrayList;
 import java.util.Collections;
