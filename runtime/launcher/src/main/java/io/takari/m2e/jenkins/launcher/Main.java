@@ -81,8 +81,24 @@ public class Main {
     // expose the current top-directory of the plugin for dev-mode-plugin
     setSystemPropertyIfEmpty("jenkins.moduleRoot", new File(".").getCanonicalPath());
 
+    File workDir = new File("./work").getCanonicalFile();
+    File jenkinsHomeDir = new File(workDir, "jenkins");
+
+    // convert legacy dir locations to new format
+    if (workDir.exists() && new File("./tmp").exists()) {
+      File tmpWork = new File("./work.tmp");
+      FileUtils.moveDirectory(workDir, tmpWork);
+      FileUtils.moveDirectory(new File("./tmp"), workDir);
+      FileUtils.moveDirectory(tmpWork, jenkinsHomeDir);
+    }
+
+    if (!workDir.exists()) {
+      FileUtils.forceMkdir(workDir);
+    }
+
     // set JENKINS_HOME
-    String jenkinsHome = new File("./work").getCanonicalPath();
+    String jenkinsHome = jenkinsHomeDir.getCanonicalPath();
+
     setSystemPropertyIfEmpty("JENKINS_HOME", jenkinsHome);
     log.info("Jenkins home: " + jenkinsHome);
     log.info("Jenkins war: " + desc.getJenkinsWar());
@@ -92,7 +108,7 @@ public class Main {
       throw new IllegalStateException("Running exploded jenkins war is not supported yet");
     }
 
-    File pluginsDir = new File(jenkinsHome, "plugins");
+    File pluginsDir = new File(jenkinsHomeDir, "plugins");
     FileUtils.deleteDirectory(pluginsDir);
     pluginsDir.mkdirs();
 
@@ -124,10 +140,10 @@ public class Main {
       setSystemPropertyIfEmpty("stapler.resourcePath", res.toString());
     }
 
-    runServer(desc);
+    runServer(desc, workDir);
   }
 
-  private static void runServer(Descriptor desc) throws Exception {
+  private static void runServer(Descriptor desc, File workDir) throws Exception {
     Resource.setDefaultUseCaches(false);
 
     Server server = new Server();
@@ -161,22 +177,22 @@ public class Main {
     WebAppContext webapp = new WebAppContext();
     webapp.setContextPath(desc.getContext());
     contexts.addHandler(webapp);
-    configureWebApplication(webapp, desc);
+    configureWebApplication(webapp, desc, workDir);
     server.start();
     server.join();
   }
 
-  private static void configureWebApplication(WebAppContext webapp, Descriptor desc) throws Exception {
+  private static void configureWebApplication(WebAppContext webapp, Descriptor desc, File workDir) throws Exception {
 
-    File t = new File("tmp");
-    t.mkdirs();
-    File extractedWebAppDir = new File(t, "webapp");
+    File extractedWebAppDir = new File(workDir, "webapp");
     File webAppFile = new File(desc.getJenkinsWar());
+
+    webapp.setTempDirectory(workDir);
+    webapp.setWar(webAppFile.getCanonicalPath());
+
     if (isExtractedWebAppDirStale(extractedWebAppDir, webAppFile)) {
       FileUtils.deleteDirectory(extractedWebAppDir);
     }
-
-    webapp.setWar(webAppFile.getCanonicalPath());
 
     // cf. https://wiki.jenkins-ci.org/display/JENKINS/Jetty
     HashLoginService hashLoginService = (new HashLoginService("Jenkins Realm"));
