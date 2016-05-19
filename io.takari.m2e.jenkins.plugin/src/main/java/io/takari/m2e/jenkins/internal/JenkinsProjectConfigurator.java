@@ -46,6 +46,8 @@ public class JenkinsProjectConfigurator extends AbstractProjectConfigurator {
       JenkinsPlugin.info("Not enabling m2e-apt for " + project.getName() + " due to takari-lifecycle apt presence");
 
     }
+
+    JenkinsNature.enable(project, monitor);
   }
 
   private boolean checkTakariLifecycle(IProject project, IProgressMonitor monitor) throws CoreException {

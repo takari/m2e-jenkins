@@ -184,6 +184,10 @@ public class JenkinsLaunchConfig implements Serializable {
     return candidate.getAttribute(MAINPLUGIN, (String) null) != null;
   }
 
+  public static String getWorkDirFor(IProject project) {
+    return LaunchingUtils.generateWorkspaceLocationVariableExpression(project.getFullPath()) + "/work";
+  }
+
   public static void migrate(ILaunchConfiguration candidate) throws CoreException {
     ILaunchConfigurationWorkingCopy wc = candidate.getWorkingCopy();
     String mp = wc.getAttribute(MAINPLUGIN, (String) null);
@@ -192,8 +196,7 @@ public class JenkinsLaunchConfig implements Serializable {
       IWorkspaceRoot ws = ResourcesPlugin.getWorkspace().getRoot();
       if (ws.getFullPath().isValidSegment(mp)) {
         IProject project = ws.getProject(mp);
-        wc.setAttribute(WORKDIR,
-            LaunchingUtils.generateWorkspaceLocationVariableExpression(project.getFullPath()) + "/work");
+        wc.setAttribute(WORKDIR, getWorkDirFor(project));
       } else {
         wc.setAttribute(WORKDIR, "");
       }

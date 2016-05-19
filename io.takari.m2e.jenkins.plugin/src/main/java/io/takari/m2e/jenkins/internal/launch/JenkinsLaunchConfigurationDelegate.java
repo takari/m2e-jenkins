@@ -42,6 +42,8 @@ import io.takari.m2e.jenkins.runtime.PluginUpdateCenter;
 @SuppressWarnings("restriction")
 public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfigurationDelegate {
 
+  public static final String ID = "io.takari.m2e.jenkins.plugin.launching.jenkins";
+
   private static final String RUNTIME_BUNDLE_SYMBOLICNAME = "io.takari.m2e.jenkins.runtime";
 
   @Override

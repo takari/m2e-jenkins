@@ -76,5 +76,37 @@
                class="io.takari.m2e.jenkins.internal.JenkinsBuilder">
          </run></builder>
    </extension>
+   <extension
+         point="org.eclipse.debug.ui.launchShortcuts">
+      <shortcut
+            class="io.takari.m2e.jenkins.internal.launch.LaunchShortcutAction"
+            icon="icons/jenkins.png"
+            id="io.takari.m2e.jenkins.launchShortcut"
+            label="Jenkins plugin"
+            modes="run,debug">
+         <contextualLaunch>
+            <contextLabel
+                  label="Jenkins plugin"
+                  mode="run">
+            </contextLabel>
+            <contextLabel
+                  label="Jenkins plugin"
+                  mode="debug">
+            </contextLabel>
+            <enablement>
+               <iterate
+                     ifEmpty="false">
+                  <adapt
+                        type="org.eclipse.core.resources.IProject">
+                     <test
+                           property="org.eclipse.core.resources.projectNature"
+                           value="io.takari.m2e.jenkins.plugin.nature">
+                     </test>
+                  </adapt>
+               </iterate>
+            </enablement>
+         </contextualLaunch>
+      </shortcut>
+   </extension>
 
 </plugin>

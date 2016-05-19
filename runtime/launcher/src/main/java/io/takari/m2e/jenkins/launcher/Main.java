@@ -86,10 +86,12 @@ public class Main {
 
     // convert legacy dir locations to new format
     if (workDir.exists() && new File(workDir, "../tmp").exists()) {
-      File tmpWork = new File(workDir, "../work.tmp");
-      FileUtils.moveDirectory(workDir, tmpWork);
-      FileUtils.moveDirectory(new File(workDir, "../tmp"), workDir);
+      File tmpWork = new File(workDir, "../work.tmp").getCanonicalFile();
+      for (File f : workDir.listFiles()) {
+        FileUtils.moveToDirectory(f, tmpWork, true);
+      }
       FileUtils.moveDirectory(tmpWork, jenkinsHomeDir);
+      FileUtils.moveToDirectory(new File(workDir, "../tmp").getCanonicalFile(), workDir, true);
     }
 
     if (!workDir.exists()) {
@@ -184,10 +186,11 @@ public class Main {
 
   private static void configureWebApplication(WebAppContext webapp, Descriptor desc, File workDir) throws Exception {
 
-    File extractedWebAppDir = new File(workDir, "webapp");
+    File tempDir = new File(workDir, "tmp");
+    File extractedWebAppDir = new File(tempDir, "webapp");
     File webAppFile = new File(desc.getJenkinsWar());
 
-    webapp.setTempDirectory(workDir);
+    webapp.setTempDirectory(tempDir);
     webapp.setWar(webAppFile.getCanonicalPath());
 
     if (isExtractedWebAppDirStale(extractedWebAppDir, webAppFile)) {

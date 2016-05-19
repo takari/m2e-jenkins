@@ -218,6 +218,13 @@ public class JenkinsMainTab extends JavaLaunchTab {
     btnDisableCaches = new Button(grpOptions, SWT.CHECK);
     btnDisableCaches.setText("Disable caches (slows down responses)");
 
+    btnIncludeTestScope = new Button(grpOptions, SWT.CHECK);
+    btnIncludeTestScope.setText("Include test scope");
+    btnIncludeOptionalTransitive = new Button(grpOptions, SWT.CHECK);
+    btnIncludeOptionalTransitive.setText("Include optional transitive plugins");
+    btnLatestVersions = new Button(grpOptions, SWT.CHECK);
+    btnLatestVersions.setText("Use latest available plugin versions");
+
     Group grpPlugins = new Group(comp, SWT.NONE);
     grpPlugins.setText("Plugin projects");
     grpPlugins.setLayout(new GridLayout(1, false));
@@ -231,14 +238,6 @@ public class JenkinsMainTab extends JavaLaunchTab {
       btnCheckButton.setData(jp);
       pluginCheckButtons.add(btnCheckButton);
     }
-
-    btnIncludeTestScope = new Button(grpPlugins, SWT.CHECK);
-    btnIncludeTestScope.setText("Include test scope");
-    btnIncludeOptionalTransitive = new Button(grpPlugins, SWT.CHECK);
-    btnIncludeOptionalTransitive.setText("Include optional transitive plugins");
-
-    btnLatestVersions = new Button(grpPlugins, SWT.CHECK);
-    btnLatestVersions.setText("Use latest available plugin versions");
 
     updateCombo();
 
@@ -262,8 +261,7 @@ public class JenkinsMainTab extends JavaLaunchTab {
     for (JenkinsPluginProject jp : projects) {
       String name = jp.getProject().getName();
       if (config.getPlugins().contains(name)) {
-        items.add(LaunchingUtils
-            .generateWorkspaceLocationVariableExpression(jp.getProject().getFullPath()) + "/work");
+        items.add(JenkinsLaunchConfig.getWorkDirFor(jp.getProject()));
       }
     }
     String value = cmbWorkDir.getText();
