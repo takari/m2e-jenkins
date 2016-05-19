@@ -73,8 +73,7 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
     
     IVMRunner runner = getVMRunner(configuration, mode);
     
-    IProject mainProject = ResourcesPlugin.getWorkspace().getRoot().getProject(config.getMainPlugin());
-    String workingDirName = mainProject.getLocation().toOSString();
+    String workingDirName = LaunchingUtils.substituteVar(config.getWorkDir());
     
     String[] envp = getEnvironment(configuration);
 
@@ -138,7 +137,7 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
     IWorkspaceRoot ws = ResourcesPlugin.getWorkspace().getRoot();
 
     Descriptor desc = new Descriptor();
-    desc.setHost(config.getHost());
+    desc.setHost("0.0.0.0");
     desc.setPort(config.getPort());
     desc.setContext("/" + config.getContext());
     desc.setDisableCaches(config.isDisableCaches());

@@ -81,14 +81,14 @@ public class Main {
     // expose the current top-directory of the plugin for dev-mode-plugin
     setSystemPropertyIfEmpty("jenkins.moduleRoot", new File(".").getCanonicalPath());
 
-    File workDir = new File("./work").getCanonicalFile();
+    File workDir = new File(".").getCanonicalFile();
     File jenkinsHomeDir = new File(workDir, "jenkins");
 
     // convert legacy dir locations to new format
-    if (workDir.exists() && new File("./tmp").exists()) {
-      File tmpWork = new File("./work.tmp");
+    if (workDir.exists() && new File(workDir, "../tmp").exists()) {
+      File tmpWork = new File(workDir, "../work.tmp");
       FileUtils.moveDirectory(workDir, tmpWork);
-      FileUtils.moveDirectory(new File("./tmp"), workDir);
+      FileUtils.moveDirectory(new File(workDir, "../tmp"), workDir);
       FileUtils.moveDirectory(tmpWork, jenkinsHomeDir);
     }
 

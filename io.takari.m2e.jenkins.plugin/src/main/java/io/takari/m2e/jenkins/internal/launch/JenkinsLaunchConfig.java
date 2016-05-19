@@ -14,6 +14,9 @@ import org.eclipse.core.databinding.observable.set.IObservableSet;
 import org.eclipse.core.databinding.observable.set.ISetChangeListener;
 import org.eclipse.core.databinding.observable.set.SetChangeEvent;
 import org.eclipse.core.databinding.observable.set.WritableSet;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
@@ -23,29 +26,29 @@ public class JenkinsLaunchConfig implements Serializable {
   private static final long serialVersionUID = 1L;
 
   private static final String ID = "io.takari.m2e.jenkins.launch";
-  private static final String HOST = ID + ".host";
+  private static final String WORKDIR = ID + ".workDir";
   private static final String PORT = ID + ".port";
   private static final String CONTEXT = ID + ".context";
   private static final String DISABLECACHES = ID + ".disableCaches";
 
   private static final String PLUGINS = ID + ".plugins";
+  @Deprecated
   private static final String MAINPLUGIN = ID + ".mainplugin";
   private static final String INCLUDETESTSCOPE = ID + ".includeTestScope";
   private static final String INCLUDEOPTIONAL = ID + ".includeOptional";
   private static final String LATESTVERSIONS = ID + ".latestVersions";
 
-  private static final String DEF_HOST = "0.0.0.0";
   private static final int DEF_PORT = 8080;
   private static final String DEF_CONTEXT = "jenkins";
 
   private PropertyChangeSupport pchange = new PropertyChangeSupport(this);
 
-  private String host;
+  private String workDir;
+
   private int port;
   private String context;
   private boolean disableCaches;
 
-  private String mainPlugin;
   private final Set<String> plugins;
   private boolean includeTestScope;
   private boolean includeOptional;
@@ -66,12 +69,12 @@ public class JenkinsLaunchConfig implements Serializable {
     }
   }
 
-  public String getHost() {
-    return host;
+  public String getWorkDir() {
+    return workDir;
   }
 
-  public void setHost(String host) {
-    pchange.firePropertyChange("host", this.host, this.host = host);
+  public void setWorkDir(String workDir) {
+    pchange.firePropertyChange("workDir", this.workDir, this.workDir = workDir);
   }
 
   public int getPort() {
@@ -84,14 +87,6 @@ public class JenkinsLaunchConfig implements Serializable {
 
   public String getContext() {
     return context;
-  }
-
-  public String getMainPlugin() {
-    return mainPlugin;
-  }
-
-  public void setMainPlugin(String mainPlugin) {
-    pchange.firePropertyChange("mainPlugin", this.mainPlugin, this.mainPlugin = mainPlugin);
   }
 
   public void setContext(String context) {
@@ -139,18 +134,16 @@ public class JenkinsLaunchConfig implements Serializable {
   }
 
   public void setDefaults(ILaunchConfigurationWorkingCopy config) {
-    config.setAttribute(HOST, DEF_HOST);
     config.setAttribute(PORT, DEF_PORT);
     config.setAttribute(CONTEXT, DEF_CONTEXT);
   }
   
   public void initializeFrom(ILaunchConfiguration config) {
     try {
-      setHost(config.getAttribute(HOST, DEF_HOST));
+      setWorkDir(config.getAttribute(WORKDIR, ""));
       setPort(config.getAttribute(PORT, DEF_PORT));
       setContext(config.getAttribute(CONTEXT, DEF_CONTEXT));
       setDisableCaches(config.getAttribute(DISABLECACHES, false));
-      setMainPlugin(config.getAttribute(MAINPLUGIN, ""));
       setIncludeTestScope(config.getAttribute(INCLUDETESTSCOPE, false));
       setIncludeOptional(config.getAttribute(INCLUDEOPTIONAL, false));
       setLatestVersions(config.getAttribute(LATESTVERSIONS, false));
@@ -162,12 +155,11 @@ public class JenkinsLaunchConfig implements Serializable {
   }
   
   public void performApply(ILaunchConfigurationWorkingCopy config) {
-    config.setAttribute(HOST, getHost());
+    config.setAttribute(WORKDIR, getWorkDir());
     config.setAttribute(PORT, getPort());
     config.setAttribute(CONTEXT, getContext());
     config.setAttribute(DISABLECACHES, isDisableCaches());
 
-    config.setAttribute(MAINPLUGIN, getMainPlugin());
     setAttribute(config, PLUGINS, getPlugins());
     config.setAttribute(INCLUDETESTSCOPE, isIncludeTestScope());
     config.setAttribute(INCLUDEOPTIONAL, isIncludeOptional());
@@ -186,6 +178,29 @@ public class JenkinsLaunchConfig implements Serializable {
 
   public void removePropertyChangeListener(PropertyChangeListener listener) {
     pchange.removePropertyChangeListener(listener);
+  }
+
+  public static boolean needsMigration(ILaunchConfiguration candidate) throws CoreException {
+    return candidate.getAttribute(MAINPLUGIN, (String) null) != null;
+  }
+
+  public static void migrate(ILaunchConfiguration candidate) throws CoreException {
+    ILaunchConfigurationWorkingCopy wc = candidate.getWorkingCopy();
+    String mp = wc.getAttribute(MAINPLUGIN, (String) null);
+
+    if (mp != null) {
+      IWorkspaceRoot ws = ResourcesPlugin.getWorkspace().getRoot();
+      if (ws.getFullPath().isValidSegment(mp)) {
+        IProject project = ws.getProject(mp);
+        wc.setAttribute(WORKDIR,
+            LaunchingUtils.generateWorkspaceLocationVariableExpression(project.getFullPath()) + "/work");
+      } else {
+        wc.setAttribute(WORKDIR, "");
+      }
+      wc.setAttribute(MAINPLUGIN, (String) null);
+    }
+
+    wc.doSave();
   }
 
 }

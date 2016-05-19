@@ -6,6 +6,7 @@
       <launchConfigurationType
             delegate="io.takari.m2e.jenkins.internal.launch.JenkinsLaunchConfigurationDelegate"
             id="io.takari.m2e.jenkins.plugin.launching.jenkins"
+            migrationDelegate="io.takari.m2e.jenkins.internal.launch.JenkinsLaunchConfigurationMigrationDelegate"
             modes="run,debug"
             name="Jenkins"
             public="true"
