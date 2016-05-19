@@ -3,7 +3,9 @@ package io.takari.m2e.jenkins.internal.ui;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.eclipse.core.databinding.Binding;
 import org.eclipse.core.databinding.DataBindingContext;
@@ -82,8 +84,11 @@ public class JenkinsMainTab extends JavaLaunchTab {
   }
 
   public boolean isValid(ILaunchConfiguration config) {
-    for (Object o : bindingContext.getBindings()) {
 
+    JenkinsLaunchConfig conf = new JenkinsLaunchConfig();
+    conf.initializeFrom(config);
+
+    for (Object o : bindingContext.getBindings()) {
       Binding b = (Binding) o;
       IStatus s = (IStatus) b.getValidationStatus().getValue();
       if (s != null) {
@@ -92,6 +97,26 @@ public class JenkinsMainTab extends JavaLaunchTab {
           return false;
         }
       }
+    }
+
+    Set<String> plugins = new HashSet<>(conf.getPlugins());
+
+    boolean containsAny = false;
+    for (JenkinsPluginProject p : projects) {
+      if (plugins.contains(p.getProject().getName())) {
+        containsAny = true;
+        break;
+      }
+    }
+
+    if (!containsAny) {
+      setErrorMessage("No plugins selected");
+      return false;
+    }
+
+    if (conf.getMainPlugin() == null || conf.getMainPlugin().trim().isEmpty()) {
+      setErrorMessage("No main plugin selected");
+      return false;
     }
 
     setErrorMessage(null);
