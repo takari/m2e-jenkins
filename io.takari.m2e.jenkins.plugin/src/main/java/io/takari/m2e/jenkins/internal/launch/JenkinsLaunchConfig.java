@@ -35,7 +35,7 @@ public class JenkinsLaunchConfig implements Serializable {
   private static final String LATESTVERSIONS = ID + ".latestVersions";
 
   private static final String DEF_HOST = "0.0.0.0";
-  private static final int DEF_PORT = 8081;
+  private static final int DEF_PORT = 8080;
   private static final String DEF_CONTEXT = "jenkins";
 
   private PropertyChangeSupport pchange = new PropertyChangeSupport(this);
