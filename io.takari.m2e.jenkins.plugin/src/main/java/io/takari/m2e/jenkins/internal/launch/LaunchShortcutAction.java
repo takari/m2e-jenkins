@@ -99,8 +99,8 @@ public class LaunchShortcutAction implements ILaunchShortcut {
     }
 
     // create new
-    String newName = launchManager.generateLaunchConfigurationName("jenkins");
     JenkinsPluginProject firstProject = projects.get(0);
+    String newName = launchManager.generateLaunchConfigurationName(firstProject.getProject().getName());
     try {
       ILaunchConfigurationWorkingCopy wc = jenkinsType.newInstance(null, newName);
       JenkinsLaunchConfig config = new JenkinsLaunchConfig();
