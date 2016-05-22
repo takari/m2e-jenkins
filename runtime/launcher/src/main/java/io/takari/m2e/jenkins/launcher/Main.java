@@ -84,19 +84,13 @@ public class Main {
     File workDir = new File(".").getCanonicalFile();
     File jenkinsHomeDir = new File(workDir, "work");
 
-    // convert legacy dir locations to new format
-    if (workDir.getName().equals("target")) {
-      File parent = workDir.getParentFile();
-      for (String dir : new String[] { "work", "tmp" }) {
-        File d = new File(parent, dir);
-        if (d.exists()) {
-          FileUtils.moveToDirectory(d, workDir, true);
-        }
-      }
-    }
-
-    if (!workDir.exists()) {
-      FileUtils.forceMkdir(workDir);
+    File targetDir = new File(workDir, "target");
+    File tmpDir;
+    if (targetDir.exists()) {
+      // we're in maven project context
+      tmpDir = new File(targetDir, "tmp");
+    } else {
+      tmpDir = new File(workDir, "tmp");
     }
 
     // set JENKINS_HOME
@@ -143,10 +137,10 @@ public class Main {
       setSystemPropertyIfEmpty("stapler.resourcePath", res.toString());
     }
 
-    runServer(desc, workDir);
+    runServer(desc, tmpDir);
   }
 
-  private static void runServer(Descriptor desc, File workDir) throws Exception {
+  private static void runServer(Descriptor desc, File tmpDir) throws Exception {
     Resource.setDefaultUseCaches(false);
 
     Server server = new Server();
@@ -180,20 +174,18 @@ public class Main {
     WebAppContext webapp = new WebAppContext();
     webapp.setContextPath(desc.getContext());
     contexts.addHandler(webapp);
-    configureWebApplication(webapp, desc, workDir);
+    configureWebApplication(webapp, desc, tmpDir);
     server.start();
     server.join();
   }
 
-  private static void configureWebApplication(WebAppContext webapp, Descriptor desc, File workDir) throws Exception {
+  private static void configureWebApplication(WebAppContext webapp, Descriptor desc, File tmpDir) throws Exception {
 
-    File tempDir = new File(workDir, "tmp");
-    File extractedWebAppDir = new File(tempDir, "webapp");
     File webAppFile = new File(desc.getJenkinsWar());
-
-    webapp.setTempDirectory(tempDir);
     webapp.setWar(webAppFile.getCanonicalPath());
+    webapp.setTempDirectory(tmpDir);
 
+    File extractedWebAppDir = new File(tmpDir, "webapp");
     if (isExtractedWebAppDirStale(extractedWebAppDir, webAppFile)) {
       FileUtils.deleteDirectory(extractedWebAppDir);
     }

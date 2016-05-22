@@ -185,7 +185,7 @@ public class JenkinsLaunchConfig implements Serializable {
   }
 
   public static String getWorkDirFor(IProject project) {
-    return LaunchingUtils.generateWorkspaceLocationVariableExpression(project.getFullPath()) + "/target";
+    return LaunchingUtils.generateWorkspaceLocationVariableExpression(project.getFullPath());
   }
 
   public static void migrate(ILaunchConfiguration candidate) throws CoreException {
