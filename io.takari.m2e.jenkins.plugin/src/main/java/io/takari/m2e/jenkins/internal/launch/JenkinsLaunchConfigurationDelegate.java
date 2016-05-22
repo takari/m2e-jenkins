@@ -76,6 +76,12 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
     IVMRunner runner = getVMRunner(configuration, mode);
     
     String workingDirName = LaunchingUtils.substituteVar(config.getWorkDir());
+    File workDir = new File(workingDirName);
+    if (!workDir.exists()) {
+      if (!workDir.mkdirs()) {
+        throw new IllegalStateException("Cannot create work dir " + workingDirName);
+      }
+    }
     
     String[] envp = getEnvironment(configuration);
 

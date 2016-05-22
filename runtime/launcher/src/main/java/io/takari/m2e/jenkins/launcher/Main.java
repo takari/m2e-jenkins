@@ -82,16 +82,17 @@ public class Main {
     setSystemPropertyIfEmpty("jenkins.moduleRoot", new File(".").getCanonicalPath());
 
     File workDir = new File(".").getCanonicalFile();
-    File jenkinsHomeDir = new File(workDir, "jenkins");
+    File jenkinsHomeDir = new File(workDir, "work");
 
     // convert legacy dir locations to new format
-    if (workDir.exists() && new File(workDir, "../tmp").exists()) {
-      File tmpWork = new File(workDir, "../work.tmp").getCanonicalFile();
-      for (File f : workDir.listFiles()) {
-        FileUtils.moveToDirectory(f, tmpWork, true);
+    if (workDir.getName().equals("target")) {
+      File parent = workDir.getParentFile();
+      for (String dir : new String[] { "work", "tmp" }) {
+        File d = new File(parent, dir);
+        if (d.exists()) {
+          FileUtils.moveToDirectory(d, workDir, true);
+        }
       }
-      FileUtils.moveDirectory(tmpWork, jenkinsHomeDir);
-      FileUtils.moveToDirectory(new File(workDir, "../tmp").getCanonicalFile(), workDir, true);
     }
 
     if (!workDir.exists()) {
