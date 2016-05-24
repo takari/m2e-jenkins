@@ -13,6 +13,8 @@ import org.apache.commons.io.FileUtils;
 import org.eclipse.jetty.security.HashLoginService;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
@@ -147,7 +149,16 @@ public class Main {
 
     Connector[] connectors = server.getConnectors();
     if (connectors == null || connectors.length == 0) {
-      ServerConnector connector = new ServerConnector(server);
+
+      HttpConfiguration httpConfig = new HttpConfiguration();
+      httpConfig.setRequestHeaderSize(32 * 1024);
+      httpConfig.setResponseHeaderSize(32 * 1024);
+      httpConfig.setOutputBufferSize(32 * 1024);
+
+      HttpConnectionFactory factory = new HttpConnectionFactory(httpConfig);
+      factory.setInputBufferSize(32 * 1024);
+
+      ServerConnector connector = new ServerConnector(server, factory);
       connector.setHost(desc.getHost());
       connector.setPort(desc.getPort());
       server.setConnectors(new Connector[] { connector });
