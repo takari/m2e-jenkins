@@ -195,6 +195,7 @@ public class Main {
     File webAppFile = new File(desc.getJenkinsWar());
     webapp.setWar(webAppFile.getCanonicalPath());
     webapp.setTempDirectory(tmpDir);
+    webapp.setPersistTempDirectory(true);
 
     File extractedWebAppDir = new File(tmpDir, "webapp");
     if (isExtractedWebAppDirStale(extractedWebAppDir, webAppFile)) {
