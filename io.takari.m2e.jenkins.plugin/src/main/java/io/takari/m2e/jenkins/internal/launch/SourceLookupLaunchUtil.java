@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
@@ -14,22 +15,19 @@ import org.eclipse.debug.core.model.IPersistableSourceLocator;
 public class SourceLookupLaunchUtil {
 
   public static ILaunch createLaunch(ILaunchConfiguration config, String mode) throws CoreException {
-
-    try {
-      Class.forName("com.ifedorenko.m2e.sourcelookup.internal.SourceLookupActivator");
-    } catch (ClassNotFoundException e) {
+    if (Platform.getBundle("com.ifedorenko.m2e.sourcelookup") == null) {
       return new Launch(config, mode, null);
     }
+
     return Provider.newLaunch(config, mode);
   }
 
   public static String[] configureVMArgs(String[] args) throws CoreException {
 
-    try {
-      Class.forName("com.ifedorenko.m2e.sourcelookup.internal.SourceLookupActivator");
-    } catch (ClassNotFoundException e) {
+    if (Platform.getBundle("com.ifedorenko.m2e.sourcelookup") == null) {
       return args;
     }
+
     List<String> arglist = new ArrayList<>();
     Collections.addAll(arglist, args);
 
