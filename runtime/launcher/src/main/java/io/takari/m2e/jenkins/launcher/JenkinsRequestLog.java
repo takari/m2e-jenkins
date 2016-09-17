@@ -1,5 +1,9 @@
 package io.takari.m2e.jenkins.launcher;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.RequestLog;
 import org.eclipse.jetty.server.Response;
@@ -11,6 +15,15 @@ public class JenkinsRequestLog extends AbstractLifeCycle implements RequestLog {
 
   private static final String STAPLER_TRACE = "Stapler-Trace-";
   private static Logger log = LoggerFactory.getLogger("RequestLog");
+  
+  /*
+   * urls that are frequently polled and spam the console
+   */
+  private static final Set<String> skipped = new HashSet<>(Arrays.asList(
+      "/ajaxBuildQueue", //
+      "/ajaxExecutors", //
+      "/buildHistory/ajax", //
+      "/progressiveHtml"));
 
   @Override
   public void log(Request request, Response response) {
@@ -21,10 +34,11 @@ public class JenkinsRequestLog extends AbstractLifeCycle implements RequestLog {
       return;
 
     // skip those to prevent flooding the console
-    if (pathInfo.endsWith("/ajaxBuildQueue") //
-        || pathInfo.endsWith("/ajaxExecutors") //
-        || pathInfo.endsWith("/buildHistory/ajax")) //
-      return;
+    for (String s : skipped) {
+      if (pathInfo.endsWith(s)) {
+        return;
+      }
+    }
 
     if (response.getStatus() == 404) {
       String reason = response.getReason();
