@@ -8,6 +8,6 @@ tools:
 
 flows:
   master:
-  - (on master, name build.sh) ./build.sh
+  - (on master, name mvn clean install -f runtime/pom.xml && mvn clean deploy ) mvn clean install -f runtime/pom.xml && mvn clean deploy 
   pr:
   - call: master
