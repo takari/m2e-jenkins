@@ -67,6 +67,7 @@ public class JenkinsMainTab extends JavaLaunchTab {
   private DataBindingContext bindingContext;
 
   private boolean updating;
+  private Button btnSkipUpdateWizard;
 
   public JenkinsMainTab() {
     projects = JenkinsPluginProject.getProjects(new NullProgressMonitor());
@@ -224,6 +225,8 @@ public class JenkinsMainTab extends JavaLaunchTab {
     btnIncludeOptionalTransitive.setText("Include optional transitive plugins");
     btnLatestVersions = new Button(grpOptions, SWT.CHECK);
     btnLatestVersions.setText("Use latest available plugin versions");
+    btnSkipUpdateWizard = new Button(grpOptions, SWT.CHECK);
+    btnSkipUpdateWizard.setText("Skip update wizard");
 
     Group grpPlugins = new Group(comp, SWT.NONE);
     grpPlugins.setText("Plugin projects");
@@ -399,6 +402,12 @@ public class JenkinsMainTab extends JavaLaunchTab {
         .observe(btnLatestVersions);
     IObservableValue latestVersionsConfigObserveValue = BeanProperties.value("latestVersions").observe(config);
     bindingContext.bindValue(observeSelectionBtnLatestVersionsObserveWidget, latestVersionsConfigObserveValue, null,
+        null);
+    //
+    IObservableValue observeSelectionBtnSkipUpdateWizardObserveWidget = WidgetProperties.selection()
+        .observe(btnSkipUpdateWizard);
+    IObservableValue skipUpdateWizardConfigObserveValue = BeanProperties.value("skipUpdateWizard").observe(config);
+    bindingContext.bindValue(observeSelectionBtnSkipUpdateWizardObserveWidget, skipUpdateWizardConfigObserveValue, null,
         null);
     //
     return bindingContext;

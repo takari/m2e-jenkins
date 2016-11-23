@@ -23,6 +23,7 @@ public class Descriptor {
   private String jenkinsWar;
   private List<PluginDesc> plugins;
   private boolean disableCaches;
+  private boolean skipUpdateWizard;
 
   @XmlElement
   public String getHost() {
@@ -77,6 +78,15 @@ public class Descriptor {
 
   public void setDisableCaches(boolean disableCaches) {
     this.disableCaches = disableCaches;
+  }
+
+  @XmlElement(name = "skipUpdateWizard")
+  public boolean isSkipUpdateWizard() {
+    return skipUpdateWizard;
+  }
+
+  public void setSkipUpdateWizard(boolean skipUpdateWizard) {
+    this.skipUpdateWizard = skipUpdateWizard;
   }
 
   public static Descriptor read(File f) {

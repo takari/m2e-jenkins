@@ -107,6 +107,17 @@ public class Main {
       throw new IllegalStateException("Running exploded jenkins war is not supported yet");
     }
 
+    if (desc.isSkipUpdateWizard()) {
+      String version = getWebappVersion(new File(desc.getJenkinsWar()));
+      if (version != null) {
+        if (!jenkinsHomeDir.exists()) {
+          jenkinsHomeDir.mkdirs();
+        }
+        writeVersion(new File(jenkinsHomeDir, "jenkins.install.InstallUtil.lastExecVersion"), version);
+        writeVersion(new File(jenkinsHomeDir, "jenkins.install.UpgradeWizard.state"), version);
+      }
+    }
+
     File pluginsDir = new File(jenkinsHomeDir, "plugins");
     FileUtils.deleteDirectory(pluginsDir);
     pluginsDir.mkdirs();
@@ -140,6 +151,10 @@ public class Main {
     }
 
     runServer(desc, tmpDir);
+  }
+
+  private static void writeVersion(File file, String version) throws IOException {
+    FileUtils.write(file, version);
   }
 
   private static void runServer(Descriptor desc, File tmpDir) throws Exception {
@@ -255,25 +270,9 @@ public class Main {
       log.warn("no " + VERSION_PROP + " in " + extractedPath);
       return false;
     }
-    ZipFile zip = new ZipFile(webApp);
-    String originalVersion;
-    try {
-      ZipEntry entry = zip.getEntry(VERSION_PATH);
-      if (entry == null) {
-        log.warn("no " + VERSION_PATH + " in " + webApp);
-        return false;
-      }
-      is = zip.getInputStream(entry);
-      try {
-        originalVersion = loadVersion(is);
-      } finally {
-        is.close();
-      }
-    } finally {
-      zip.close();
-    }
+    String originalVersion = getWebappVersion(webApp);
     if (originalVersion == null) {
-      log.warn("no " + VERSION_PROP + " in jar:" + webApp.toURI() + "!/" + VERSION_PATH);
+      log.warn("no " + VERSION_PATH + " in " + webApp);
       return false;
     }
     if (!extractedVersion.equals(originalVersion)) {
@@ -283,6 +282,19 @@ public class Main {
     }
     log.info(extractedWebAppDir + " already up to date with respect to " + webApp);
     return false;
+  }
+
+  private static String getWebappVersion(File webApp) throws IOException {
+    try (ZipFile zip = new ZipFile(webApp)) {
+      ZipEntry entry = zip.getEntry(VERSION_PATH);
+      if (entry == null) {
+        log.warn("no " + VERSION_PATH + " in " + webApp);
+        return null;
+      }
+      try (InputStream is = zip.getInputStream(entry)) {
+        return loadVersion(is);
+      }
+    }
   }
 
   private static String loadVersion(InputStream is) throws IOException {

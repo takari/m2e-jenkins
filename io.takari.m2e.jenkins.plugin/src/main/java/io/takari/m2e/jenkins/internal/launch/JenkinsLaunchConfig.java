@@ -37,6 +37,7 @@ public class JenkinsLaunchConfig implements Serializable {
   private static final String INCLUDETESTSCOPE = ID + ".includeTestScope";
   private static final String INCLUDEOPTIONAL = ID + ".includeOptional";
   private static final String LATESTVERSIONS = ID + ".latestVersions";
+  private static final String SKIPUPDATEWIZARD = ID + ".skipUpdateWizard";
 
   private static final int DEF_PORT = 8080;
   private static final String DEF_CONTEXT = "jenkins";
@@ -48,6 +49,7 @@ public class JenkinsLaunchConfig implements Serializable {
   private int port;
   private String context;
   private boolean disableCaches;
+  private boolean skipUpdateWizard;
 
   private final Set<String> plugins;
   private boolean includeTestScope;
@@ -101,6 +103,14 @@ public class JenkinsLaunchConfig implements Serializable {
     pchange.firePropertyChange("disableCaches", this.disableCaches, this.disableCaches = disableCaches);
   }
 
+  public boolean isSkipUpdateWizard() {
+    return skipUpdateWizard;
+  }
+
+  public void setSkipUpdateWizard(boolean skipUpdateWizard) {
+    pchange.firePropertyChange("skipUpdateWizard", this.skipUpdateWizard, this.skipUpdateWizard = skipUpdateWizard);
+  }
+
   public Set<String> getPlugins() {
     return plugins;
   }
@@ -136,6 +146,10 @@ public class JenkinsLaunchConfig implements Serializable {
   public void setDefaults(ILaunchConfigurationWorkingCopy config) {
     config.setAttribute(PORT, DEF_PORT);
     config.setAttribute(CONTEXT, DEF_CONTEXT);
+    config.setAttribute(INCLUDETESTSCOPE, true);
+    config.setAttribute(INCLUDEOPTIONAL, true);
+    config.setAttribute(LATESTVERSIONS, true);
+    config.setAttribute(SKIPUPDATEWIZARD, true);
   }
   
   public void initializeFrom(ILaunchConfiguration config) {
@@ -144,9 +158,10 @@ public class JenkinsLaunchConfig implements Serializable {
       setPort(config.getAttribute(PORT, DEF_PORT));
       setContext(config.getAttribute(CONTEXT, DEF_CONTEXT));
       setDisableCaches(config.getAttribute(DISABLECACHES, false));
-      setIncludeTestScope(config.getAttribute(INCLUDETESTSCOPE, false));
-      setIncludeOptional(config.getAttribute(INCLUDEOPTIONAL, false));
-      setLatestVersions(config.getAttribute(LATESTVERSIONS, false));
+      setIncludeTestScope(config.getAttribute(INCLUDETESTSCOPE, true));
+      setIncludeOptional(config.getAttribute(INCLUDEOPTIONAL, true));
+      setLatestVersions(config.getAttribute(LATESTVERSIONS, true));
+      setSkipUpdateWizard(config.getAttribute(SKIPUPDATEWIZARD, true));
       getPlugins().clear();
       getPlugins().addAll(config.getAttribute(PLUGINS, Collections.<String> emptyList()));
     } catch (CoreException e) {
@@ -164,6 +179,7 @@ public class JenkinsLaunchConfig implements Serializable {
     config.setAttribute(INCLUDETESTSCOPE, isIncludeTestScope());
     config.setAttribute(INCLUDEOPTIONAL, isIncludeOptional());
     config.setAttribute(LATESTVERSIONS, isLatestVersions());
+    config.setAttribute(SKIPUPDATEWIZARD, isSkipUpdateWizard());
   }
 
   private static void setAttribute(ILaunchConfigurationWorkingCopy config, String name, Set<String> set) {
