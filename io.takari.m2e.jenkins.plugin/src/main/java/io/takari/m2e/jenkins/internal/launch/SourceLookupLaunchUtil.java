@@ -6,16 +6,14 @@ import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.Launch;
-import org.eclipse.debug.core.model.IPersistableSourceLocator;
 
 public class SourceLookupLaunchUtil {
 
   public static ILaunch createLaunch(ILaunchConfiguration config, String mode) throws CoreException {
-    if (Platform.getBundle("com.ifedorenko.m2e.sourcelookup") == null) {
+    if (Platform.getBundle("com.ifedorenko.jdt.launching") == null) {
       return new Launch(config, mode, null);
     }
 
@@ -24,7 +22,7 @@ public class SourceLookupLaunchUtil {
 
   public static String[] configureVMArgs(String[] args) throws CoreException {
 
-    if (Platform.getBundle("com.ifedorenko.m2e.sourcelookup") == null) {
+    if (Platform.getBundle("com.ifedorenko.jdt.launching") == null) {
       return args;
     }
 
@@ -40,14 +38,14 @@ public class SourceLookupLaunchUtil {
   private static class Provider {
     @SuppressWarnings("restriction")
     static String getJavaagentString() throws CoreException {
-      return com.ifedorenko.m2e.sourcelookup.internal.SourceLookupActivator.getDefault().getJavaagentString();
+      return com.ifedorenko.jdt.internal.launching.sourcelookup.advanced.AdvancedSourceLookupSupport
+          .getJavaagentString();
     }
 
+    @SuppressWarnings("restriction")
     static ILaunch newLaunch(ILaunchConfiguration config, String mode) throws CoreException {
-      IPersistableSourceLocator locator = DebugPlugin.getDefault().getLaunchManager()
-          .newSourceLocator("com.ifedorenko.m2e.sourcelookupDirector");
-      locator.initializeDefaults(config);
-      return new Launch(config, mode, locator);
+      return com.ifedorenko.jdt.internal.launching.sourcelookup.advanced.AdvancedSourceLookupSupport
+          .createAdvancedLaunch(config, mode);
     }
   }
 }
