@@ -11,6 +11,7 @@ import org.eclipse.core.databinding.Binding;
 import org.eclipse.core.databinding.DataBindingContext;
 import org.eclipse.core.databinding.UpdateValueStrategy;
 import org.eclipse.core.databinding.beans.BeanProperties;
+import org.eclipse.core.databinding.beans.PojoProperties;
 import org.eclipse.core.databinding.observable.set.ISetChangeListener;
 import org.eclipse.core.databinding.observable.set.SetChangeEvent;
 import org.eclipse.core.databinding.observable.value.IObservableValue;
@@ -68,6 +69,8 @@ public class JenkinsMainTab extends JavaLaunchTab {
 
   private boolean updating;
   private Button btnSkipUpdateWizard;
+  private Text txtJenkinsVersion;
+  private Button btnForceJenkinsVersion;
 
   public JenkinsMainTab() {
     projects = JenkinsPluginProject.getProjects(new NullProgressMonitor());
@@ -214,18 +217,31 @@ public class JenkinsMainTab extends JavaLaunchTab {
     Group grpOptions = new Group(comp, SWT.NONE);
     grpOptions.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
     grpOptions.setText("Options");
-    grpOptions.setLayout(new GridLayout(1, false));
+    grpOptions.setLayout(new GridLayout(2, false));
+
+    btnForceJenkinsVersion = new Button(grpOptions, SWT.CHECK);
+    btnForceJenkinsVersion.setText("Force jenkins version");
+
+    txtJenkinsVersion = new Text(grpOptions, SWT.BORDER);
+    GridData gd_txtJenkinsVersion = new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1);
+    gd_txtJenkinsVersion.widthHint = 60;
+    txtJenkinsVersion.setLayoutData(gd_txtJenkinsVersion);
 
     btnDisableCaches = new Button(grpOptions, SWT.CHECK);
+    btnDisableCaches.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
     btnDisableCaches.setText("Disable caches (slows down responses)");
 
     btnIncludeTestScope = new Button(grpOptions, SWT.CHECK);
+    btnIncludeTestScope.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
     btnIncludeTestScope.setText("Include test scope");
     btnIncludeOptionalTransitive = new Button(grpOptions, SWT.CHECK);
+    btnIncludeOptionalTransitive.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
     btnIncludeOptionalTransitive.setText("Include optional transitive plugins");
     btnLatestVersions = new Button(grpOptions, SWT.CHECK);
+    btnLatestVersions.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
     btnLatestVersions.setText("Use latest available plugin versions");
     btnSkipUpdateWizard = new Button(grpOptions, SWT.CHECK);
+    btnSkipUpdateWizard.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
     btnSkipUpdateWizard.setText("Skip update wizard");
 
     Group grpPlugins = new Group(comp, SWT.NONE);
@@ -273,6 +289,7 @@ public class JenkinsMainTab extends JavaLaunchTab {
     cmbWorkDir.setText(value);
   }
 
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   private void initAdditionalBindings() {
     for (Button b : pluginCheckButtons) {
       JenkinsPluginProject jp = (JenkinsPluginProject) b.getData();
@@ -359,6 +376,8 @@ public class JenkinsMainTab extends JavaLaunchTab {
       }
     }
   }
+
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   protected DataBindingContext initDataBindings() {
     DataBindingContext bindingContext = new DataBindingContext();
     //
@@ -409,6 +428,24 @@ public class JenkinsMainTab extends JavaLaunchTab {
     IObservableValue skipUpdateWizardConfigObserveValue = BeanProperties.value("skipUpdateWizard").observe(config);
     bindingContext.bindValue(observeSelectionBtnSkipUpdateWizardObserveWidget, skipUpdateWizardConfigObserveValue, null,
         null);
+    //
+    IObservableValue observeSelectionBtnForceJenkinsVersionObserveWidget = WidgetProperties.selection()
+        .observe(btnForceJenkinsVersion);
+    IObservableValue enabledTxtJenkinsVersionObserveValue = PojoProperties.value("enabled").observe(txtJenkinsVersion);
+    bindingContext.bindValue(observeSelectionBtnForceJenkinsVersionObserveWidget, enabledTxtJenkinsVersionObserveValue,
+        null, new UpdateValueStrategy(UpdateValueStrategy.POLICY_NEVER));
+    //
+    IObservableValue observeSelectionBtnForceJenkinsVersionObserveWidget_1 = WidgetProperties.selection()
+        .observe(btnForceJenkinsVersion);
+    IObservableValue forceJenkinsVersionConfigObserveValue = BeanProperties.value("forceJenkinsVersion")
+        .observe(config);
+    bindingContext.bindValue(observeSelectionBtnForceJenkinsVersionObserveWidget_1,
+        forceJenkinsVersionConfigObserveValue, null, null);
+    //
+    IObservableValue observeTextTxtJenkinsVersionObserveWidget = WidgetProperties.text(SWT.Modify)
+        .observe(txtJenkinsVersion);
+    IObservableValue jenkinsVersionConfigObserveValue = BeanProperties.value("jenkinsVersion").observe(config);
+    bindingContext.bindValue(observeTextTxtJenkinsVersionObserveWidget, jenkinsVersionConfigObserveValue, null, null);
     //
     return bindingContext;
   }

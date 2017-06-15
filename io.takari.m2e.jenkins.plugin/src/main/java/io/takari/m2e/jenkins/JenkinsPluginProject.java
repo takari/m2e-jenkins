@@ -355,7 +355,7 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     return allRepos;
   }
 
-  public Artifact findJenkinsWar(IProgressMonitor monitor, boolean download)
+  public Artifact findJenkinsWar(IProgressMonitor monitor, String forceVersion, boolean download)
       throws CoreException {
 
     String jenkinsWarId = getMojoParameter(HPI_PLUGIN_GROUP_ID, HPI_PLUGIN_ARTIFACT_ID, "test-hpl", "jenkinsWarId",
@@ -372,15 +372,17 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
         match = a.getArtifactId().equals("jenkins-war") || a.getArtifactId().equals("hudson-war");
       if (match) {
         if (download) {
-          IMavenProjectFacade warProject = MavenPlugin.getMavenProjectRegistry().getMavenProject(a.getGroupId(),
-              a.getArtifactId(), a.getVersion());
+          String version = forceVersion != null ? forceVersion : a.getVersion();
 
-          a = new DefaultArtifact(a.getGroupId(), a.getArtifactId(), a.getVersion(), null, "war", "", null);
+          IMavenProjectFacade warProject = MavenPlugin.getMavenProjectRegistry().getMavenProject(a.getGroupId(),
+              a.getArtifactId(), version);
+
+          a = new DefaultArtifact(a.getGroupId(), a.getArtifactId(), version, null, "war", "", null);
           File f;
           if (warProject != null) {
             f = new File(warProject.getProject().getLocation().toOSString());
           } else {
-            f = resolveIfNeeded(a.getGroupId(), a.getArtifactId(), a.getVersion(), "war", mp, monitor);
+            f = resolveIfNeeded(a.getGroupId(), a.getArtifactId(), version, "war", mp, monitor);
           }
           a.setFile(f);
         }

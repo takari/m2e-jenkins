@@ -31,6 +31,8 @@ public class JenkinsLaunchConfig implements Serializable {
   private static final String CONTEXT = ID + ".context";
   private static final String DISABLECACHES = ID + ".disableCaches";
 
+  private static final String FORCE_JENKINSVER = ID + ".forceJenkinsVer";
+  private static final String JENKINSVER = ID + ".jenkinsVer";
   private static final String PLUGINS = ID + ".plugins";
   @Deprecated
   private static final String MAINPLUGIN = ID + ".mainplugin";
@@ -51,12 +53,15 @@ public class JenkinsLaunchConfig implements Serializable {
   private boolean disableCaches;
   private boolean skipUpdateWizard;
 
+  private boolean forceJenkinsVersion;
+  private String jenkinsVersion;
+
   private final Set<String> plugins;
   private boolean includeTestScope;
   private boolean includeOptional;
   private boolean latestVersions;
   
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public JenkinsLaunchConfig() {
     if (Realm.getDefault() != null) {
       plugins = new WritableSet();
@@ -111,10 +116,28 @@ public class JenkinsLaunchConfig implements Serializable {
     pchange.firePropertyChange("skipUpdateWizard", this.skipUpdateWizard, this.skipUpdateWizard = skipUpdateWizard);
   }
 
+  public boolean isForceJenkinsVersion() {
+    return forceJenkinsVersion;
+  }
+
+  public void setForceJenkinsVersion(boolean forceJenkinsVersion) {
+    pchange.firePropertyChange("forceJenkinsVersion", this.forceJenkinsVersion,
+        this.forceJenkinsVersion = forceJenkinsVersion);
+  }
+
+  public String getJenkinsVersion() {
+    return jenkinsVersion;
+  }
+
+  public void setJenkinsVersion(String jenkinsVersion) {
+    pchange.firePropertyChange("jenkinsVersion", this.jenkinsVersion, this.jenkinsVersion = jenkinsVersion);
+  }
+
   public Set<String> getPlugins() {
     return plugins;
   }
 
+  @SuppressWarnings("rawtypes")
   public IObservableSet getPluginsObservable() {
     return plugins instanceof IObservableSet ? (IObservableSet) plugins : null;
   }
@@ -150,6 +173,7 @@ public class JenkinsLaunchConfig implements Serializable {
     config.setAttribute(INCLUDEOPTIONAL, true);
     config.setAttribute(LATESTVERSIONS, true);
     config.setAttribute(SKIPUPDATEWIZARD, true);
+    config.setAttribute(FORCE_JENKINSVER, false);
   }
   
   public void initializeFrom(ILaunchConfiguration config) {
@@ -158,6 +182,8 @@ public class JenkinsLaunchConfig implements Serializable {
       setPort(config.getAttribute(PORT, DEF_PORT));
       setContext(config.getAttribute(CONTEXT, DEF_CONTEXT));
       setDisableCaches(config.getAttribute(DISABLECACHES, false));
+      setForceJenkinsVersion(config.getAttribute(FORCE_JENKINSVER, false));
+      setJenkinsVersion(config.getAttribute(JENKINSVER, ""));
       setIncludeTestScope(config.getAttribute(INCLUDETESTSCOPE, true));
       setIncludeOptional(config.getAttribute(INCLUDEOPTIONAL, true));
       setLatestVersions(config.getAttribute(LATESTVERSIONS, true));
@@ -174,6 +200,9 @@ public class JenkinsLaunchConfig implements Serializable {
     config.setAttribute(PORT, getPort());
     config.setAttribute(CONTEXT, getContext());
     config.setAttribute(DISABLECACHES, isDisableCaches());
+
+    config.setAttribute(FORCE_JENKINSVER, isForceJenkinsVersion());
+    config.setAttribute(JENKINSVER, getJenkinsVersion());
 
     setAttribute(config, PLUGINS, getPlugins());
     config.setAttribute(INCLUDETESTSCOPE, isIncludeTestScope());

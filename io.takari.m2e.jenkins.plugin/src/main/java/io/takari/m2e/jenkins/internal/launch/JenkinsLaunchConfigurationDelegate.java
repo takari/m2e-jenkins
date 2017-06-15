@@ -164,7 +164,7 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
         continue;
 
       // select the highest jenkins version from selected plugins
-      Artifact jw = jp.findJenkinsWar(monitor, false);
+      Artifact jw = jp.findJenkinsWar(monitor, null, false);
       if (jwarVersion == null || compareVersions(jw.getVersion(), jwarVersion) > 0) {
         jwarVersion = jw.getVersion();
         jwarProject = jp;
@@ -234,7 +234,9 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
       desc.getPlugins().add(pd);
     }
     
-    Artifact jwar = jwarProject.findJenkinsWar(monitor, true);
+    String forceJenkinsVersion = config.isForceJenkinsVersion() ? config.getJenkinsVersion() : null;
+
+    Artifact jwar = jwarProject.findJenkinsWar(monitor, forceJenkinsVersion, true);
 
     desc.setJenkinsWar(jwar.getFile().getAbsolutePath());
 
