@@ -1,13 +1,21 @@
 package io.takari.m2e.jenkins;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.jar.Attributes;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
@@ -36,6 +44,7 @@ import org.eclipse.m2e.core.embedder.ICallable;
 import org.eclipse.m2e.core.embedder.IMaven;
 import org.eclipse.m2e.core.embedder.IMavenExecutionContext;
 import org.eclipse.m2e.core.project.IMavenProjectFacade;
+import org.eclipse.m2e.core.project.IMavenProjectRegistry;
 
 import io.takari.m2e.jenkins.internal.JenkinsPlugin;
 import io.takari.m2e.jenkins.runtime.PluginUpdateCenter;
@@ -92,8 +101,7 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     File hpl = new File(testDir, "the.hpl");
 
     if (regenerate || !hpl.exists()) {
-      monitor.subTask("Generating .hpl for " + facade.getProject().getName());
-      executeMojo(HPI_PLUGIN_GROUP_ID, HPI_PLUGIN_ARTIFACT_ID, "test-hpl", monitor);
+      generateTestHpl(monitor);
     }
 
     return hpl;
@@ -102,18 +110,136 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
   public void executeMojo(String groupId, String artifactId, String goal, IProgressMonitor monitor)
       throws CoreException {
     final List<MojoExecution> mojoExecutions = facade.getMojoExecutions(groupId, artifactId, monitor, goal);
+    if (mojoExecutions == null || mojoExecutions.isEmpty()) {
+      throw new IllegalStateException(
+          "No executions for " + groupId + ":" + artifactId + " in " + facade.getArtifactKey());
+    }
 
-    MavenPlugin.getMavenProjectRegistry().execute(facade, new ICallable<Void>() {
+    final IMaven maven = MavenPlugin.getMaven();
+    final IMavenProjectRegistry registry = MavenPlugin.getMavenProjectRegistry();
+
+    registry.execute(facade, new ICallable<Void>() {
       @Override
       public Void call(IMavenExecutionContext context, IProgressMonitor monitor) throws CoreException {
         // context.execute(project, callable, monitor);
         for (MojoExecution mojoExecution : mojoExecutions) {
-          MavenPlugin.getMaven().execute(facade.getMavenProject(), mojoExecution, monitor);
+          maven.execute(facade.getMavenProject(), mojoExecution, monitor);
           break;
         }
         return null;
       }
+
     }, monitor);
+  }
+
+  public void generateTestHpl(IProgressMonitor monitor) throws CoreException {
+    final IMavenProjectRegistry registry = MavenPlugin.getMavenProjectRegistry();
+    List<MojoExecution> mojoExecutions = facade.getMojoExecutions(HPI_PLUGIN_GROUP_ID, HPI_PLUGIN_ARTIFACT_ID, monitor,
+        "test-hpl");
+    final MojoExecution testHpl = mojoExecutions.isEmpty() ? null : mojoExecutions.get(0);
+
+    if (testHpl != null) {
+      try {
+        registry.execute(facade, new ICallable<Void>() {
+          @Override
+          public Void call(IMavenExecutionContext context, IProgressMonitor monitor) throws CoreException {
+            doGenerateTestHpl(testHpl, monitor);
+            return null;
+          }
+        }, monitor);
+      } catch (Exception e) {
+        JenkinsPlugin.error("Error running test-hpl on " + facade.getProject().getName(), e);
+      }
+    }
+  }
+
+  @SuppressWarnings("deprecation")
+  public void doGenerateTestHpl(MojoExecution mojoExecution, IProgressMonitor monitor) throws CoreException {
+    monitor.subTask("Generating .hpl for " + facade.getProject().getName());
+
+    final IMaven maven = MavenPlugin.getMaven();
+
+    MavenProject mavenProject = facade.getMavenProject();
+    Set<Artifact> arts = mavenProject.getArtifacts();
+    Set<Artifact> depArts = mavenProject.getDependencyArtifacts();
+    mavenProject.setArtifacts(JenkinsPluginProject.fixArtifactFiles(arts, monitor));
+    mavenProject.setDependencyArtifacts(JenkinsPluginProject.fixArtifactFiles(depArts, monitor));
+
+    try {
+      // context.execute(project, callable, monitor);
+      maven.execute(mavenProject, mojoExecution, monitor);
+    } finally {
+      if (arts != null) {
+        mavenProject.setArtifacts(arts);
+      }
+      if (depArts != null) {
+        mavenProject.setDependencyArtifacts(depArts);
+      }
+    }
+  }
+
+  /**
+   * Dirty attempt to fix maven-hpi-plugin's MavenArtifact#getActualArtifactId()
+   * which doesn't work without actual artifact files
+   */
+  public static Set<Artifact> fixArtifactFiles(Set<Artifact> arts, IProgressMonitor monitor)
+      throws CoreException {
+    Set<Artifact> newArts = new LinkedHashSet<>();
+    for (Artifact art : arts) {
+      JenkinsPluginProject jdep = JenkinsPluginProject.create(art.getGroupId(), art.getArtifactId(), art.getVersion(),
+          monitor);
+      if (jdep != null) {
+        try {
+          File fixJar = jdep.generateFixJar(false, monitor);
+          art = new DefaultArtifact(art.getGroupId(), art.getArtifactId(), art.getVersion(), art.getScope(),
+              art.getType(), art.getClassifier(), art.getArtifactHandler());
+          art.setFile(fixJar);
+          art.setResolved(true);
+        } catch(IOException e) {
+          JenkinsPlugin.error("Error generating temp jar for " + jdep.getFacade().getProject().getName(), e);
+        }
+      }
+      newArts.add(art);
+    }
+    return newArts;
+  }
+
+  /**
+   * Dirty attempt to fix maven-hpi-plugin's MavenArtifact#getActualArtifactId()
+   * which doesn't work without actual artifact files
+   */
+  public File generateFixJar(boolean force, IProgressMonitor monitor) throws CoreException, IOException {
+    File tempJar = new File(facade.getProject().getLocation().append("target/hpitrick.jar").toOSString());
+    if (tempJar.exists()) {
+      if (!force) {
+        return tempJar;
+      }
+      tempJar.delete();
+    }
+
+    String v = facade.getArtifactKey().getVersion();
+    String pluginVersionDescription = getMojoParameter(HPI_PLUGIN_GROUP_ID, HPI_PLUGIN_ARTIFACT_ID, "test-hpl",
+        "pluginVersionDescription", String.class, monitor);
+    if (v.endsWith("-SNAPSHOT") && pluginVersionDescription == null) {
+      String dt = new SimpleDateFormat("MM/dd/yyyy HH:mm").format(new Date());
+      pluginVersionDescription = "private-" + dt + "-" + System.getProperty("user.name");
+    }
+    if (pluginVersionDescription != null) {
+      v += " (" + pluginVersionDescription + ")";
+    }
+
+    Manifest mf = new Manifest();
+    Attributes mainAttributes = mf.getMainAttributes();
+    mainAttributes.put(Attributes.Name.MANIFEST_VERSION, "1.0");
+    mainAttributes.putValue("Short-Name", facade.getArtifactKey().getArtifactId());
+    mainAttributes.putValue("Plugin-Version", v);
+
+    tempJar.getParentFile().mkdirs();
+    tempJar.createNewFile();
+    try (JarOutputStream jar = new JarOutputStream(new FileOutputStream(tempJar), mf)) {
+      jar.flush();
+    }
+    return tempJar;
   }
 
   public List<String> getResources(IProgressMonitor monitor) throws CoreException {
@@ -142,8 +268,7 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
 
           ArtifactKey ak = getPlugin(updates, art.getGroupId(), art.getArtifactId(), art.getVersion());
 
-          IJenkinsPlugin jp = resolvePlugin(ak.getGroupId(), ak.getArtifactId(), ak.getVersion(), mp,
-              context, monitor);
+          IJenkinsPlugin jp = resolvePlugin(ak.getGroupId(), ak.getArtifactId(), ak.getVersion(), mp, context, monitor);
           if (jp != null) {
             deps.add(new PluginDependency(jp, isTestScope(art.getScope()), false));
           }
@@ -417,7 +542,7 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     return create(MavenPlugin.getMavenProjectRegistry().getMavenProject(groupId, artifactId, version), monitor);
   }
 
-  private static JenkinsPluginProject create(IMavenProjectFacade facade, IProgressMonitor monitor) {
+  public static JenkinsPluginProject create(IMavenProjectFacade facade, IProgressMonitor monitor) {
     if (facade == null)
       return null;
     if (!isJenkinsType(facade.getPackaging()))

@@ -1,5 +1,7 @@
 package io.takari.m2e.jenkins.internal;
 
+import java.util.Set;
+
 import org.apache.maven.plugin.MojoExecution;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
@@ -68,7 +70,23 @@ public class JenkinsProjectConfigurator extends AbstractProjectConfigurator {
   @Override
   public AbstractBuildParticipant getBuildParticipant(IMavenProjectFacade projectFacade, MojoExecution execution,
       IPluginExecutionMetadata executionMetadata) {
-    return new MojoExecutionBuildParticipant(execution, false, true);
+    return new MojoExecutionBuildParticipant(execution, false, false) {
+      public Set<IProject> build(int kind, IProgressMonitor monitor) throws Exception {
+        if (appliesToBuildKind(kind)) {
+          IMavenProjectFacade facade = getMavenProjectFacade();
+          try {
+            JenkinsPluginProject jdep = JenkinsPluginProject.create(facade, monitor);
+            if (jdep != null) {
+              jdep.generateFixJar(true, monitor);
+              jdep.doGenerateTestHpl(getMojoExecution(), monitor);
+            }
+          } catch (Exception e) {
+            JenkinsPlugin.error("Error running test-hpl on " + facade.getProject().getName(), e);
+          }
+        }
+        return null;
+      }
+    };
   }
 
 }
