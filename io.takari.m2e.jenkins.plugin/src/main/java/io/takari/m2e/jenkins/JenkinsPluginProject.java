@@ -19,6 +19,7 @@ import java.util.jar.Manifest;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
+import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
@@ -33,6 +34,7 @@ import org.apache.maven.model.building.ModelBuildingRequest;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuildingRequest;
+import org.apache.maven.project.artifact.MavenMetadataSource;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -43,6 +45,7 @@ import org.eclipse.m2e.core.embedder.ArtifactKey;
 import org.eclipse.m2e.core.embedder.ICallable;
 import org.eclipse.m2e.core.embedder.IMaven;
 import org.eclipse.m2e.core.embedder.IMavenExecutionContext;
+import org.eclipse.m2e.core.internal.embedder.MavenImpl;
 import org.eclipse.m2e.core.project.IMavenProjectFacade;
 import org.eclipse.m2e.core.project.IMavenProjectRegistry;
 
@@ -160,21 +163,27 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     final IMaven maven = MavenPlugin.getMaven();
 
     MavenProject mavenProject = facade.getMavenProject();
-    Set<Artifact> arts = mavenProject.getArtifacts();
     Set<Artifact> depArts = mavenProject.getDependencyArtifacts();
-    mavenProject.setArtifacts(JenkinsPluginProject.fixArtifactFiles(arts, monitor));
-    mavenProject.setDependencyArtifacts(JenkinsPluginProject.fixArtifactFiles(depArts, monitor));
+
+    Set<Artifact> newDepArts = depArts;
+
+    if (newDepArts == null) {
+      try {
+        @SuppressWarnings("restriction")
+        ArtifactFactory artifactFactory = ((MavenImpl) maven).getPlexusContainer().lookup(ArtifactFactory.class);
+        newDepArts = MavenMetadataSource.createArtifacts(artifactFactory, mavenProject.getDependencies(), null, null,
+            mavenProject);
+      } catch (Exception e) {
+        throw new IllegalStateException(e);
+      }
+    }
+
+    mavenProject.setDependencyArtifacts(JenkinsPluginProject.fixArtifactFiles(newDepArts, monitor));
 
     try {
-      // context.execute(project, callable, monitor);
       maven.execute(mavenProject, mojoExecution, monitor);
     } finally {
-      if (arts != null) {
-        mavenProject.setArtifacts(arts);
-      }
-      if (depArts != null) {
-        mavenProject.setDependencyArtifacts(depArts);
-      }
+      mavenProject.setDependencyArtifacts(depArts);
     }
   }
 
@@ -184,6 +193,9 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
    */
   public static Set<Artifact> fixArtifactFiles(Set<Artifact> arts, IProgressMonitor monitor)
       throws CoreException {
+    if (arts == null) {
+      return null;
+    }
     Set<Artifact> newArts = new LinkedHashSet<>();
     for (Artifact art : arts) {
       JenkinsPluginProject jdep = JenkinsPluginProject.create(art.getGroupId(), art.getArtifactId(), art.getVersion(),
