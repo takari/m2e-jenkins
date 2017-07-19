@@ -1,17 +1,23 @@
 package io.takari.m2e.jenkins.internal;
 
+import java.util.Arrays;
 import java.util.Set;
 
 import org.apache.maven.plugin.MojoExecution;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.m2e.core.MavenPlugin;
+import org.eclipse.m2e.core.embedder.IMaven;
 import org.eclipse.m2e.core.lifecyclemapping.model.IPluginExecutionMetadata;
 import org.eclipse.m2e.core.project.IMavenProjectFacade;
 import org.eclipse.m2e.core.project.configurator.AbstractBuildParticipant;
+import org.eclipse.m2e.core.project.configurator.AbstractBuildParticipant2;
 import org.eclipse.m2e.core.project.configurator.AbstractProjectConfigurator;
-import org.eclipse.m2e.core.project.configurator.MojoExecutionBuildParticipant;
 import org.eclipse.m2e.core.project.configurator.ProjectConfigurationRequest;
 import org.jboss.tools.maven.apt.MavenJdtAptPlugin;
 import org.jboss.tools.maven.apt.preferences.AnnotationProcessingMode;
@@ -53,7 +59,6 @@ public class JenkinsProjectConfigurator extends AbstractProjectConfigurator {
   }
 
   private boolean checkTakariLifecycle(IProject project, IProgressMonitor monitor) throws CoreException {
-
     // takari lifecycle manages annotation processing itself
     Bundle takariJdt = Platform.getBundle("io.takari.m2e.jdt.core");
     if (takariJdt != null) {
@@ -68,23 +73,46 @@ public class JenkinsProjectConfigurator extends AbstractProjectConfigurator {
   }
 
   @Override
-  public AbstractBuildParticipant getBuildParticipant(IMavenProjectFacade projectFacade, MojoExecution execution,
+  public AbstractBuildParticipant getBuildParticipant(IMavenProjectFacade projectFacade, final MojoExecution execution,
       IPluginExecutionMetadata executionMetadata) {
-    return new MojoExecutionBuildParticipant(execution, false, false) {
+    final IMaven maven = MavenPlugin.getMaven();
+
+    return new AbstractBuildParticipant2() {
       public Set<IProject> build(int kind, IProgressMonitor monitor) throws Exception {
-        if (appliesToBuildKind(kind)) {
-          IMavenProjectFacade facade = getMavenProjectFacade();
+        IMavenProjectFacade facade = getMavenProjectFacade();
+        JenkinsPluginProject jdep = JenkinsPluginProject.create(facade, monitor);
+        if (jdep != null) {
+          boolean force = false;
           try {
-            JenkinsPluginProject jdep = JenkinsPluginProject.create(facade, monitor);
-            if (jdep != null) {
-              jdep.generateFixJar(true, monitor);
-              jdep.doGenerateTestHpl(getMojoExecution(), monitor);
+            if (FULL_BUILD == kind) {
+              force = true;
+            }
+            if (force || hasInterestingDelta(jdep)) {
+              jdep.generateFixJar(force, monitor);
+              jdep.generateTestHpl(execution, force, monitor);
+              jdep.generateTestDependenciesIndex(maven.getExecutionContext(), force, monitor);
+              facade.getProject().getFolder("target").refreshLocal(IResource.DEPTH_INFINITE, monitor);
             }
           } catch (Exception e) {
             JenkinsPlugin.error("Error running test-hpl on " + facade.getProject().getName(), e);
           }
         }
         return null;
+      }
+
+      private boolean hasInterestingDelta(JenkinsPluginProject jp) {
+        IResourceDelta delta = getDelta(jp.getProject());
+        if (delta != null) {
+          for (IPath path : Arrays.asList( //
+              jp.getHplLocation(), //
+              jp.getTestDependenciesLocation(), //
+              jp.getHpiTrickLocation())) {
+            if (delta.findMember(path) != null) {
+              return true;
+            }
+          }
+        }
+        return false;
       }
     };
   }

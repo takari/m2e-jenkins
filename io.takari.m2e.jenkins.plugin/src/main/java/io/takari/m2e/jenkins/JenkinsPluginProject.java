@@ -3,6 +3,9 @@ package io.takari.m2e.jenkins;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -14,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.Attributes;
+import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
@@ -39,6 +43,7 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.m2e.core.MavenPlugin;
 import org.eclipse.m2e.core.embedder.ArtifactKey;
@@ -97,18 +102,35 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     return mavenProject;
   }
 
+  private static IPath relativize(IProject project, IPath path) {
+    return path.makeRelativeTo(project.getFullPath());
+  }
+
+  private File toFile(IPath projectRelativPath) {
+    return facade.getProject().getLocation().append(projectRelativPath).toFile();
+  }
+
+  public IPath getHplLocation() {
+    return relativize(facade.getProject(), facade.getOutputLocation().append("the.hpl"));
+  }
+
+  public IPath getTestHplLocation() {
+    return relativize(facade.getProject(), facade.getTestOutputLocation().append("the.hpl"));
+  }
+
+  public IPath getHpiTrickLocation() {
+    return facade.getProject().getFile("target/hpitrick.jar").getProjectRelativePath();
+  }
+
+  public IPath getTestDependenciesLocation() {
+    return relativize(facade.getProject(), facade.getTestOutputLocation().append("test-dependencies"));
+  }
+
   @Override
   public File getPluginFile(IProgressMonitor monitor, boolean regenerate) throws CoreException {
-    // assume that test-hpl mojo writes the file
-    File testDir = new File(getMavenProject(monitor).getBuild().getTestOutputDirectory());
-    File hpl = new File(testDir, "the.hpl");
-
-    if (regenerate || !hpl.exists()) {
-      generateTestHpl(monitor);
-    }
-
-    return hpl;
+    return generateTestHpl(regenerate, monitor);
   }
+
 
   public void executeMojo(String groupId, String artifactId, String goal, IProgressMonitor monitor)
       throws CoreException {
@@ -135,7 +157,12 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     }, monitor);
   }
 
-  public void generateTestHpl(IProgressMonitor monitor) throws CoreException {
+  public File generateTestHpl(final boolean force, IProgressMonitor monitor) throws CoreException {
+    File hpl = toFile(getHplLocation());
+    if (hpl.exists() && !force) {
+      return hpl;
+    }
+
     final IMavenProjectRegistry registry = MavenPlugin.getMavenProjectRegistry();
     List<MojoExecution> mojoExecutions = facade.getMojoExecutions(HPI_PLUGIN_GROUP_ID, HPI_PLUGIN_ARTIFACT_ID, monitor,
         "test-hpl");
@@ -143,48 +170,65 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
 
     if (testHpl != null) {
       try {
-        registry.execute(facade, new ICallable<Void>() {
+        return registry.execute(facade, new ICallable<File>() {
           @Override
-          public Void call(IMavenExecutionContext context, IProgressMonitor monitor) throws CoreException {
-            doGenerateTestHpl(testHpl, monitor);
-            return null;
+          public File call(IMavenExecutionContext context, IProgressMonitor monitor) throws CoreException {
+            return generateTestHpl(testHpl, force, monitor);
           }
         }, monitor);
       } catch (Exception e) {
         JenkinsPlugin.error("Error running test-hpl on " + facade.getProject().getName(), e);
       }
     }
+    return null;
   }
 
   @SuppressWarnings("deprecation")
-  public void doGenerateTestHpl(MojoExecution mojoExecution, IProgressMonitor monitor) throws CoreException {
-    monitor.subTask("Generating .hpl for " + facade.getProject().getName());
+  public File generateTestHpl(MojoExecution mojoExecution, boolean force, IProgressMonitor monitor)
+      throws CoreException {
 
-    final IMaven maven = MavenPlugin.getMaven();
+    MavenProject mavenProject = getMavenProject(monitor);
+    File testHpl = toFile(getTestHplLocation());
+    File hpl = toFile(getHplLocation());
 
-    MavenProject mavenProject = facade.getMavenProject();
-    Set<Artifact> depArts = mavenProject.getDependencyArtifacts();
+    if (!testHpl.exists() || force) {
+      monitor.subTask("Generating .hpl for " + facade.getProject().getName());
+      final IMaven maven = MavenPlugin.getMaven();
 
-    Set<Artifact> newDepArts = depArts;
+      Set<Artifact> depArts = mavenProject.getDependencyArtifacts();
 
-    if (newDepArts == null) {
+      Set<Artifact> newDepArts = depArts;
+
+      if (newDepArts == null) {
+        try {
+          @SuppressWarnings("restriction")
+          ArtifactFactory artifactFactory = ((MavenImpl) maven).getPlexusContainer().lookup(ArtifactFactory.class);
+          newDepArts = MavenMetadataSource.createArtifacts(artifactFactory, mavenProject.getDependencies(), null, null,
+              mavenProject);
+        } catch (Exception e) {
+          throw new IllegalStateException(e);
+        }
+      }
+
+      mavenProject.setDependencyArtifacts(JenkinsPluginProject.fixArtifactFiles(newDepArts, monitor));
+
       try {
-        @SuppressWarnings("restriction")
-        ArtifactFactory artifactFactory = ((MavenImpl) maven).getPlexusContainer().lookup(ArtifactFactory.class);
-        newDepArts = MavenMetadataSource.createArtifacts(artifactFactory, mavenProject.getDependencies(), null, null,
-            mavenProject);
-      } catch (Exception e) {
+        maven.execute(mavenProject, mojoExecution, monitor);
+      } finally {
+        mavenProject.setDependencyArtifacts(depArts);
+      }
+    }
+
+    hpl.delete();
+    if (testHpl.exists()) {
+      try {
+        Files.copy(testHpl.toPath(), hpl.toPath());
+      } catch (IOException e) {
         throw new IllegalStateException(e);
       }
     }
 
-    mavenProject.setDependencyArtifacts(JenkinsPluginProject.fixArtifactFiles(newDepArts, monitor));
-
-    try {
-      maven.execute(mavenProject, mojoExecution, monitor);
-    } finally {
-      mavenProject.setDependencyArtifacts(depArts);
-    }
+    return hpl;
   }
 
   /**
@@ -221,7 +265,7 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
    * which doesn't work without actual artifact files
    */
   public File generateFixJar(boolean force, IProgressMonitor monitor) throws CoreException, IOException {
-    File tempJar = new File(facade.getProject().getLocation().append("target/hpitrick.jar").toOSString());
+    File tempJar = toFile(getHpiTrickLocation());
     if (tempJar.exists()) {
       if (!force) {
         return tempJar;
@@ -263,6 +307,39 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     return res;
   }
 
+  public void generateTestDependenciesIndex(IMavenExecutionContext context, boolean force, IProgressMonitor monitor)
+      throws CoreException, IOException {
+
+    // mimic TestDependencyMojo
+
+    File testDir = toFile(getTestDependenciesLocation());
+    testDir.mkdirs();
+
+    File idxFile = new File(testDir, "index");
+    Files.deleteIfExists(idxFile.toPath());
+    try (Writer w = new OutputStreamWriter(new FileOutputStream(idxFile), "UTF-8")) {
+      for (PluginDependency dep : findPluginDependencies(null, context, monitor)) {
+        IJenkinsPlugin plugin = dep.getPlugin();
+        if (plugin instanceof JenkinsPluginProject) {
+          continue;
+        }
+
+        File pluginFile = plugin.getPluginFile(monitor, false);
+        String artifactId = getActualArtifactId(pluginFile);
+        File dst = new File(testDir, artifactId + ".hpi");
+        Files.deleteIfExists(dst.toPath());
+        Files.copy(pluginFile.toPath(), dst.toPath());
+        w.write(artifactId + "\n");
+      }
+    }
+  }
+
+  private String getActualArtifactId(File f) throws IOException {
+    try (JarFile jf = new JarFile(f)) {
+      return jf.getManifest().getMainAttributes().getValue("Short-Name");
+    }
+  }
+
   public List<PluginDependency> findPluginDependencies(IProgressMonitor monitor, final PluginUpdateCenter updates)
       throws CoreException {
     final IMaven maven = MavenPlugin.getMaven();
@@ -271,24 +348,31 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
       @Override
       public List<PluginDependency> call(IMavenExecutionContext context, IProgressMonitor monitor)
           throws CoreException {
-        MavenProject mp = getMavenProject(monitor);
-        List<PluginDependency> deps = new ArrayList<>();
-
-        for (Artifact art : mp.getArtifacts()) {
-          if (monitor.isCanceled())
-            break;
-
-          ArtifactKey ak = getPlugin(updates, art.getGroupId(), art.getArtifactId(), art.getVersion());
-
-          IJenkinsPlugin jp = resolvePlugin(ak.getGroupId(), ak.getArtifactId(), ak.getVersion(), mp, context, monitor);
-          if (jp != null) {
-            deps.add(new PluginDependency(jp, isTestScope(art.getScope()), false));
-          }
-        }
-        return correctVersions(deps, context, updates, monitor);
+        return findPluginDependencies(updates, context, monitor);
       }
-
     }, monitor);
+  }
+
+  private List<PluginDependency> findPluginDependencies(final PluginUpdateCenter updates,
+      IMavenExecutionContext context, IProgressMonitor monitor) throws CoreException {
+    MavenProject mp = getMavenProject(monitor);
+    List<PluginDependency> deps = new ArrayList<>();
+
+    for (Artifact art : mp.getArtifacts()) {
+      if (monitor.isCanceled())
+        break;
+
+      ArtifactKey ak = getPlugin(updates, art.getGroupId(), art.getArtifactId(), art.getVersion());
+
+      IJenkinsPlugin jp = resolvePlugin(ak.getGroupId(), ak.getArtifactId(), ak.getVersion(), mp, context, monitor);
+      if (jp != null) {
+        deps.add(new PluginDependency(jp, isTestScope(art.getScope()), false));
+      }
+    }
+    if (updates != null) {
+      return correctVersions(deps, context, updates, monitor);
+    }
+    return deps;
   }
 
   private IJenkinsPlugin resolvePlugin(String groupId, String artifactId, String version,
@@ -460,7 +544,11 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
 
   File resolveIfNeeded(String groupId, String artifactId, String version, String type, MavenProject project,
       IProgressMonitor monitor) throws CoreException {
+    return resolve(groupId, artifactId, version, type, project, true, monitor);
+  }
 
+  File resolve(String groupId, String artifactId, String version, String type, MavenProject project, boolean force,
+      IProgressMonitor monitor) throws CoreException {
     IMaven maven = MavenPlugin.getMaven();
     File repoBasedir = new File(maven.getLocalRepositoryPath());
 
@@ -468,7 +556,7 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     File file = new File(repoBasedir, fileLocation);
 
     // in most cases it should be there
-    if (file.exists()) {
+    if (!force || file.exists()) {
       return file;
     }
 

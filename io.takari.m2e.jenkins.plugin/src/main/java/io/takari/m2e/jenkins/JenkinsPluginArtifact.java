@@ -39,8 +39,7 @@ public class JenkinsPluginArtifact implements IJenkinsPlugin {
 
   @Override
   public File getPluginFile(IProgressMonitor monitor, boolean regenerate) throws CoreException {
-    return rootProject.resolveIfNeeded(getGroupId(), getArtifactId(), getVersion(), "hpi", mavenProject,
-        monitor);
+    return rootProject.resolve(getGroupId(), getArtifactId(), getVersion(), "hpi", mavenProject, regenerate, monitor);
   }
 
   @Override
