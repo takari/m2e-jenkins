@@ -52,6 +52,8 @@
               *;scope=compile|runtime
             </Embed-Dependency>
             <Embed-Directory>jars</Embed-Directory>
+            <Include-Resource>{maven-resources}</Include-Resource>
+            <Include-Resource>jrebel-plugin.jar</Include-Resource>
             <_exportcontents>
               io.takari.m2e.jenkins.runtime,
               io.takari.m2e.jenkins.launcher.desc,
