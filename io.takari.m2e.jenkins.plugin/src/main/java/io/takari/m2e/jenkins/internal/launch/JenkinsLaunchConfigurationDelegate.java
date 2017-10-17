@@ -22,6 +22,9 @@ import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.jobs.IJobManager;
+import org.eclipse.core.runtime.jobs.ISchedulingRule;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.jdt.launching.AbstractJavaLaunchConfigurationDelegate;
@@ -70,7 +73,17 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
     JenkinsLaunchConfig config = new JenkinsLaunchConfig();
     config.initializeFrom(configuration);
 
-    Descriptor desc = createDescriptor(config, monitor);
+    Descriptor desc;
+
+    IJobManager jm = Job.getJobManager();
+    ISchedulingRule rule = ResourcesPlugin.getWorkspace().getRoot();
+    jm.beginRule(rule, monitor);
+    try {
+      desc = createDescriptor(config, monitor);
+    } finally {
+      jm.endRule(rule);
+    }
+
     File descFile = writeDescriptor(desc);
     
     monitor.subTask("Verifying launch attributes...");
@@ -171,6 +184,8 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
     JenkinsPluginProject jwarProject = null;
 
     Map<ArtifactKey, JenkinsPluginProject> projects = new HashMap<>();
+
+    monitor.subTask("Configuring workspace plugins for launch..");
     for (String plugin : config.getPlugins()) {
 
       IProject project = ws.getProject(plugin);
@@ -187,7 +202,7 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
 
       PluginDesc pd = new PluginDesc();
       pd.setId(jp.getFacade().getArtifactKey().getArtifactId());
-      pd.setPluginFile(jp.getPluginFile(monitor, true).getAbsolutePath());
+      pd.setPluginFile(jp.getPluginFile(monitor, false).getAbsolutePath());
       pd.setResources(jp.getResources(monitor));
       desc.getPlugins().add(pd);
 
@@ -198,15 +213,11 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
 
     PluginUpdateCenter updates = null;
     if (config.isLatestVersions()) {
-      try {
-        monitor.subTask("Getting list of latest plugin versions");
-        updates = new PluginUpdateCenter();
-      } catch (IOException e) {
-        JenkinsPlugin.error("Cannot talk to update center", e);
-        updates = null;
-      }
+      monitor.subTask("Getting list of latest plugin versions");
+      updates = getUpdateCenter();
     }
 
+    monitor.subTask("Collecting dependency plugins..");
     for (JenkinsPluginProject jp : projects.values()) {
 
       // collect dependency plugins, but take the highest version
@@ -327,5 +338,31 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
     public boolean isOverride() {
       return override;
     }
+  }
+
+  private static final Object updatesMutex = new Object();
+  private static volatile PluginUpdateCenter UPDATES = null;
+  private static volatile long lastUpdate = 0;
+  private static final long UPDATE_THRESHOLD = 1000L * 60 * 60 * 24; // 1 day
+
+  private PluginUpdateCenter getUpdateCenter() {
+    long cur = System.currentTimeMillis();
+
+    PluginUpdateCenter updates = UPDATES;
+    if (updates == null || lastUpdate + UPDATE_THRESHOLD > cur) {
+      synchronized (updatesMutex) {
+        updates = UPDATES;
+        if (updates == null || lastUpdate + UPDATE_THRESHOLD > cur) {
+          try {
+            updates = UPDATES = new PluginUpdateCenter();
+            lastUpdate = cur;
+          } catch (IOException e) {
+            JenkinsPlugin.error("Cannot talk to update center", e);
+          }
+        }
+      }
+    }
+
+    return updates;
   }
 }

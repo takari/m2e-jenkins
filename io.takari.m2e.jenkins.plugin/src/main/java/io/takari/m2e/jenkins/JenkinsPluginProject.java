@@ -131,7 +131,6 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     return generateTestHpl(regenerate, monitor);
   }
 
-
   public void executeMojo(String groupId, String artifactId, String goal, IProgressMonitor monitor)
       throws CoreException {
     final List<MojoExecution> mojoExecutions = facade.getMojoExecutions(groupId, artifactId, monitor, goal);
@@ -157,23 +156,41 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     }, monitor);
   }
 
-  public File generateTestHpl(final boolean force, IProgressMonitor monitor) throws CoreException {
+  public File generateTestHpl(boolean force, IProgressMonitor monitor) throws CoreException {
     File hpl = toFile(getHplLocation());
-    if (hpl.exists() && !force) {
+    File testHpl = toFile(getTestHplLocation());
+    if (!hpl.exists() || !testHpl.exists()) {
+      force = true;
+    }
+    if (!force) {
+      try {
+        String hplContent = new String(Files.readAllBytes(hpl.toPath()), "UTF-8");
+        String testHplContent = new String(Files.readAllBytes(testHpl.toPath()), "UTF-8");
+        if (!hplContent.equals(testHplContent)) {
+          force = true;
+        }
+      } catch (IOException e) {
+        force = true;
+      }
+    }
+
+    if (!force) {
       return hpl;
     }
+
+    final boolean doForce = force;
 
     final IMavenProjectRegistry registry = MavenPlugin.getMavenProjectRegistry();
     List<MojoExecution> mojoExecutions = facade.getMojoExecutions(HPI_PLUGIN_GROUP_ID, HPI_PLUGIN_ARTIFACT_ID, monitor,
         "test-hpl");
-    final MojoExecution testHpl = mojoExecutions.isEmpty() ? null : mojoExecutions.get(0);
+    final MojoExecution testHplMojo = mojoExecutions.isEmpty() ? null : mojoExecutions.get(0);
 
-    if (testHpl != null) {
+    if (testHplMojo != null) {
       try {
         return registry.execute(facade, new ICallable<File>() {
           @Override
           public File call(IMavenExecutionContext context, IProgressMonitor monitor) throws CoreException {
-            return generateTestHpl(testHpl, force, monitor);
+            return generateTestHpl(testHplMojo, doForce, monitor);
           }
         }, monitor);
       } catch (Exception e) {
@@ -235,8 +252,7 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
    * Dirty attempt to fix maven-hpi-plugin's MavenArtifact#getActualArtifactId()
    * which doesn't work without actual artifact files
    */
-  public static Set<Artifact> fixArtifactFiles(Set<Artifact> arts, IProgressMonitor monitor)
-      throws CoreException {
+  public static Set<Artifact> fixArtifactFiles(Set<Artifact> arts, IProgressMonitor monitor) throws CoreException {
     if (arts == null) {
       return null;
     }
@@ -251,7 +267,7 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
               art.getType(), art.getClassifier(), art.getArtifactHandler());
           art.setFile(fixJar);
           art.setResolved(true);
-        } catch(IOException e) {
+        } catch (IOException e) {
           JenkinsPlugin.error("Error generating temp jar for " + jdep.getFacade().getProject().getName(), e);
         }
       }
@@ -399,8 +415,7 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
       if (mp != null) {
         return new JenkinsPluginArtifact(mp, this);
       }
-      JenkinsPlugin.error(
-          "Cannot read maven project " + groupId + ":" + artifactId + ":" + version);
+      JenkinsPlugin.error("Cannot read maven project " + groupId + ":" + artifactId + ":" + version);
     }
 
     return null;
@@ -410,7 +425,8 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     return "test".equals(scope);
   }
 
-  private MavenProject readProject(File pom, IMavenExecutionContext context, List<ArtifactRepository> remoteRepositories) throws CoreException {
+  private MavenProject readProject(File pom, IMavenExecutionContext context,
+      List<ArtifactRepository> remoteRepositories) throws CoreException {
     ProjectBuildingRequest req = context.newProjectBuildingRequest();
     req.setProcessPlugins(false);
     req.setResolveDependencies(false);
@@ -425,24 +441,24 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
 
   protected List<PluginDependency> correctVersions(List<PluginDependency> plugins, IMavenExecutionContext context,
       PluginUpdateCenter updates, IProgressMonitor monitor) throws CoreException {
-    
-    // transitive dependency plugins might contain optional dependencies on other 
+
+    // transitive dependency plugins might contain optional dependencies on other
     // plugins and will not be happy if older versions of such dependencies are
     // installed, so bump their versions
-    
+
     Map<ArtifactKey, PluginContainer> pluginMap = new HashMap<>();
     for (PluginDependency jp : plugins) {
       pluginMap.put(key(jp.getPlugin()), new PluginContainer(jp));
     }
-    
+
     // plugins might get processed multiple times
     Deque<PluginDependency> q = new LinkedList<>(plugins);
-    
-    while(!q.isEmpty()) {
+
+    while (!q.isEmpty()) {
       PluginDependency pd = q.removeFirst();
       IJenkinsPlugin jp = pd.getPlugin();
       MavenProject mp = jp.getMavenProject(monitor);
-      
+
       List<Dependency> deps = mp.getDependencies();
 
       for (Dependency dep : deps) {
@@ -486,9 +502,9 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
         }
       }
     }
-    
+
     List<PluginDependency> result = new ArrayList<>();
-    for(PluginContainer pc: pluginMap.values()) {
+    for (PluginContainer pc : pluginMap.values()) {
       result.add(pc.getDependency());
     }
     return result;
@@ -562,8 +578,9 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
 
     // but if it's not..
     monitor.subTask("Resolving " + artifactId + ":" + version + " " + type);
-    return MavenPlugin.getMaven().resolve(groupId, artifactId, version, type, null,
-        getRemoteArtifactRepositories(project, monitor), monitor).getFile();
+    return MavenPlugin.getMaven()
+        .resolve(groupId, artifactId, version, type, null, getRemoteArtifactRepositories(project, monitor), monitor)
+        .getFile();
   }
 
   private List<ArtifactRepository> getRemoteArtifactRepositories(MavenProject containing, IProgressMonitor monitor)
@@ -580,8 +597,7 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     return allRepos;
   }
 
-  public Artifact findJenkinsWar(IProgressMonitor monitor, String forceVersion, boolean download)
-      throws CoreException {
+  public Artifact findJenkinsWar(IProgressMonitor monitor, String forceVersion, boolean download) throws CoreException {
 
     String jenkinsWarId = getMojoParameter(HPI_PLUGIN_GROUP_ID, HPI_PLUGIN_ARTIFACT_ID, "test-hpl", "jenkinsWarId",
         String.class, monitor);
@@ -619,8 +635,7 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
 
   public <T> T getMojoParameter(String groupId, String artifactId, String goal, String parameter, Class<T> asType,
       IProgressMonitor monitor) throws CoreException {
-    List<MojoExecution> mojoExecutions = facade.getMojoExecutions(groupId, artifactId, monitor,
-        goal);
+    List<MojoExecution> mojoExecutions = facade.getMojoExecutions(groupId, artifactId, monitor, goal);
 
     for (MojoExecution mojoExecution : mojoExecutions) {
 

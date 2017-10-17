@@ -2,14 +2,19 @@ package io.takari.m2e.jenkins.jrebel;
 
 import java.net.URL;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.kohsuke.stapler.AbstractTearOff;
+import org.zeroturnaround.javarebel.Logger;
+import org.zeroturnaround.javarebel.LoggerFactory;
 import org.zeroturnaround.javarebel.integration.monitor.MonitoredResourceManager;
 
 import com.google.common.cache.LoadingCache;
 
 public class ScriptCacheManager {
+
+  private static final Logger log = LoggerFactory.getLogger(ScriptCacheManager.class.getName());
 
   private final Map<String, Object> keys = new ConcurrentHashMap<>();
 
@@ -20,7 +25,13 @@ public class ScriptCacheManager {
     String name = nameObj.toString();
     Object key = keys.get(name);
     if (key != null) {
-      if (!MonitoredResourceManager.modified(key).isEmpty()) {
+      Set<String> modified = MonitoredResourceManager.modified(key);
+      if (!modified.isEmpty()) {
+
+        for (String mod : modified) {
+          log.infoEcho("Reloading {}", mod);
+        }
+
         cache.invalidate(name);
         keys.remove(name);
       }
