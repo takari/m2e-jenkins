@@ -2,6 +2,7 @@ package io.takari.m2e.jenkins.internal.launch;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,6 +18,7 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -95,12 +97,25 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
     Collections.addAll(classPath, getClasspath(configuration));
     classPath.addAll(getRuntimeClasspath());
 
+    List<String> vmArgsList = new ArrayList<>();
+    Collections.addAll(vmArgsList, execArgs.getVMArgumentsArray());
+
+    try {
+      URL jrUrl = JenkinsRuntimePlugin.getInstance().getJrebelPlugin();
+      if (jrUrl != null) {
+        URL localURL = FileLocator.toFileURL(jrUrl);
+        String path = new File(localURL.getFile()).getCanonicalPath();
+        vmArgsList.add("-Drebel.plugins=" + path);
+      }
+    } catch (IOException ioe) {
+    }
+
     String mainTypeName = JenkinsRuntimePlugin.getInstance().getLauncherClass();
     VMRunnerConfiguration runnerConfig = new VMRunnerConfiguration(mainTypeName,
         classPath.toArray(new String[classPath.size()]));
     runnerConfig.setProgramArguments(new String[] { descFile.getAbsolutePath() });
     runnerConfig.setEnvironment(envp);
-    runnerConfig.setVMArguments(SourceLookupLaunchUtil.configureVMArgs(execArgs.getVMArgumentsArray()));
+    runnerConfig.setVMArguments(SourceLookupLaunchUtil.configureVMArgs(vmArgsList));
     runnerConfig.setWorkingDirectory(workingDirName);
     runnerConfig.setVMSpecificAttributesMap(vmAttributesMap);
     runnerConfig.setBootClassPath(getBootpath(configuration));

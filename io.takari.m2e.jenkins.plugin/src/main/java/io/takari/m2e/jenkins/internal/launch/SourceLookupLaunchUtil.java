@@ -1,8 +1,6 @@
 package io.takari.m2e.jenkins.internal.launch;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.Collection;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Platform;
@@ -20,19 +18,14 @@ public class SourceLookupLaunchUtil {
     return Provider.newLaunch(config, mode);
   }
 
-  public static String[] configureVMArgs(String[] args) throws CoreException {
+  public static String[] configureVMArgs(Collection<String> args) throws CoreException {
 
-    if (Platform.getBundle("com.ifedorenko.jdt.launching") == null) {
-      return args;
+    if (Platform.getBundle("com.ifedorenko.jdt.launching") != null) {
+      // add sourcelookup agent
+      args.add(Provider.getJavaagentString());
     }
 
-    List<String> arglist = new ArrayList<>();
-    Collections.addAll(arglist, args);
-
-    // add sourcelookup agent
-    arglist.add(Provider.getJavaagentString());
-
-    return arglist.toArray(new String[arglist.size()]);
+    return args.toArray(new String[args.size()]);
   }
 
   private static class Provider {

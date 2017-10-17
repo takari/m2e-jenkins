@@ -17,6 +17,7 @@
   <modules>
     <module>launcher</module>
     <module>io.takari.m2e.jenkins.runtime</module>
+    <!-- <module>jrebel-plugin</module> -->
   </modules>
   
   <build>
