@@ -544,7 +544,7 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
 
   File resolveIfNeeded(String groupId, String artifactId, String version, String type, MavenProject project,
       IProgressMonitor monitor) throws CoreException {
-    return resolve(groupId, artifactId, version, type, project, true, monitor);
+    return resolve(groupId, artifactId, version, type, project, false, monitor);
   }
 
   File resolve(String groupId, String artifactId, String version, String type, MavenProject project, boolean force,
@@ -556,7 +556,7 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     File file = new File(repoBasedir, fileLocation);
 
     // in most cases it should be there
-    if (!force || file.exists()) {
+    if (file.exists() && !force) {
       return file;
     }
 
