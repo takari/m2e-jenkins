@@ -34,6 +34,7 @@ public class JenkinsLaunchConfig implements Serializable {
   private static final String FORCE_JENKINSVER = ID + ".forceJenkinsVer";
   private static final String JENKINSVER = ID + ".jenkinsVer";
   private static final String PLUGINS = ID + ".plugins";
+  private static final String FORCE_UPDATE = ID + ".forceUpdate";
   @Deprecated
   private static final String MAINPLUGIN = ID + ".mainplugin";
   private static final String INCLUDETESTSCOPE = ID + ".includeTestScope";
@@ -57,6 +58,7 @@ public class JenkinsLaunchConfig implements Serializable {
   private String jenkinsVersion;
 
   private final Set<String> plugins;
+  private boolean forceUpdate;
   private boolean includeTestScope;
   private boolean includeOptional;
   private boolean latestVersions;
@@ -142,6 +144,14 @@ public class JenkinsLaunchConfig implements Serializable {
     return plugins instanceof IObservableSet ? (IObservableSet) plugins : null;
   }
 
+  public boolean isForceUpdate() {
+    return forceUpdate;
+  }
+
+  public void setForceUpdate(boolean forceUpdate) {
+    pchange.firePropertyChange("forceUpdate", this.forceUpdate, this.forceUpdate = forceUpdate);
+  }
+
   public boolean isIncludeTestScope() {
     return includeTestScope;
   }
@@ -174,6 +184,7 @@ public class JenkinsLaunchConfig implements Serializable {
     config.setAttribute(LATESTVERSIONS, true);
     config.setAttribute(SKIPUPDATEWIZARD, true);
     config.setAttribute(FORCE_JENKINSVER, false);
+    config.setAttribute(FORCE_UPDATE, false);
   }
   
   public void initializeFrom(ILaunchConfiguration config) {
@@ -184,6 +195,7 @@ public class JenkinsLaunchConfig implements Serializable {
       setDisableCaches(config.getAttribute(DISABLECACHES, false));
       setForceJenkinsVersion(config.getAttribute(FORCE_JENKINSVER, false));
       setJenkinsVersion(config.getAttribute(JENKINSVER, ""));
+      setForceUpdate(config.getAttribute(FORCE_UPDATE, false));
       setIncludeTestScope(config.getAttribute(INCLUDETESTSCOPE, true));
       setIncludeOptional(config.getAttribute(INCLUDEOPTIONAL, true));
       setLatestVersions(config.getAttribute(LATESTVERSIONS, true));
@@ -205,6 +217,7 @@ public class JenkinsLaunchConfig implements Serializable {
     config.setAttribute(JENKINSVER, getJenkinsVersion());
 
     setAttribute(config, PLUGINS, getPlugins());
+    config.setAttribute(FORCE_UPDATE, isForceUpdate());
     config.setAttribute(INCLUDETESTSCOPE, isIncludeTestScope());
     config.setAttribute(INCLUDEOPTIONAL, isIncludeOptional());
     config.setAttribute(LATESTVERSIONS, isLatestVersions());

@@ -61,8 +61,8 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
 
   private static final String TYPE_HPI = "hpi";
   private static final String TYPE_JPI = "jpi";
-  private static final String HPI_PLUGIN_GROUP_ID = "org.jenkins-ci.tools";
-  private static final String HPI_PLUGIN_ARTIFACT_ID = "maven-hpi-plugin";
+  public static final String HPI_PLUGIN_GROUP_ID = "org.jenkins-ci.tools";
+  public static final String HPI_PLUGIN_ARTIFACT_ID = "maven-hpi-plugin";
 
   private IMavenProjectFacade facade;
   private MavenProject mavenProject;
@@ -354,19 +354,6 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     try (JarFile jf = new JarFile(f)) {
       return jf.getManifest().getMainAttributes().getValue("Short-Name");
     }
-  }
-
-  public List<PluginDependency> findPluginDependencies(IProgressMonitor monitor, final PluginUpdateCenter updates)
-      throws CoreException {
-    final IMaven maven = MavenPlugin.getMaven();
-
-    return maven.execute(false, true /* force update */, new ICallable<List<PluginDependency>>() {
-      @Override
-      public List<PluginDependency> call(IMavenExecutionContext context, IProgressMonitor monitor)
-          throws CoreException {
-        return findPluginDependencies(updates, context, monitor);
-      }
-    }, monitor);
   }
 
   private List<PluginDependency> findPluginDependencies(final PluginUpdateCenter updates,

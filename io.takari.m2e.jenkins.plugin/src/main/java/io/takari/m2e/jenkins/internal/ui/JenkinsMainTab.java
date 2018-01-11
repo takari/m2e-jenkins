@@ -60,6 +60,7 @@ public class JenkinsMainTab extends JavaLaunchTab {
   private Text txtPort;
   private Text txtContext;
   private List<Button> pluginCheckButtons;
+  private Button btnForceUpdate;
   private Button btnIncludeTestScope;
   private Button btnIncludeOptionalTransitive;
   private Button btnDisableCaches;
@@ -231,6 +232,9 @@ public class JenkinsMainTab extends JavaLaunchTab {
     btnDisableCaches.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
     btnDisableCaches.setText("Disable caches (slows down responses)");
 
+    btnForceUpdate = new Button(grpOptions, SWT.CHECK);
+    btnForceUpdate.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
+    btnForceUpdate.setText("Force dependency updates (mvn -U)");
     btnIncludeTestScope = new Button(grpOptions, SWT.CHECK);
     btnIncludeTestScope.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
     btnIncludeTestScope.setText("Include test scope");
@@ -404,6 +408,10 @@ public class JenkinsMainTab extends JavaLaunchTab {
     IObservableValue disableCachesConfigObserveValue = BeanProperties.value("disableCaches").observe(config);
     bindingContext.bindValue(observeSelectionBtnDisableCachesslowsObserveWidget, disableCachesConfigObserveValue, null,
         null);
+    //
+    IObservableValue observeSelectionBtnForceUpdateObserveWidget = WidgetProperties.selection().observe(btnForceUpdate);
+    IObservableValue forceUpdateConfigObserveValue = BeanProperties.value("forceUpdate").observe(config);
+    bindingContext.bindValue(observeSelectionBtnForceUpdateObserveWidget, forceUpdateConfigObserveValue, null, null);
     //
     IObservableValue observeSelectionBtnIncludeTestScopeObserveWidget = WidgetProperties.selection()
         .observe(btnIncludeTestScope);
