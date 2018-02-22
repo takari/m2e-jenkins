@@ -11,6 +11,9 @@ import org.zeroturnaround.javarebel.integration.support.JavassistClassBytecodePr
 
 import io.takari.m2e.jenkins.jrebel.IManageableScriptLoader;
 
+/**
+ * Clears cached jelly/groovy/etc scripts when source changes
+ */
 public class CachingScriptLoaderCBP extends JavassistClassBytecodeProcessor {
 
   @Override
@@ -19,7 +22,7 @@ public class CachingScriptLoaderCBP extends JavassistClassBytecodeProcessor {
     cp.importPackage("io.takari.m2e.jenkins.jrebel");
 
     ctClass.addInterface(cp.get(IManageableScriptLoader.class.getName()));
-    ctClass.addField(CtField.make("private ScriptCacheManager __cacheManager = new ScriptCacheManager();", ctClass));
+    ctClass.addField(CtField.make("private ScriptCacheManager __cacheManager = new ScriptCacheManager(this);", ctClass));
     ctClass.addMethod(CtMethod.make("public ScriptCacheManager __getCacheManager() { return __cacheManager; }", ctClass));
 
     ctClass.getDeclaredMethod("findScript").instrument(new ExprEditor() {

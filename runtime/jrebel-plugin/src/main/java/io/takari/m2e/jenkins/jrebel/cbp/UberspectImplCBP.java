@@ -7,6 +7,9 @@ import org.zeroturnaround.javarebel.integration.support.JavassistClassBytecodePr
 
 import io.takari.m2e.jenkins.jrebel.UberspectExt;
 
+/**
+ * Allows extracting introspector from UberspectImpl (used in IntrospectorExt)
+ */
 public class UberspectImplCBP extends JavassistClassBytecodeProcessor {
 
   @Override

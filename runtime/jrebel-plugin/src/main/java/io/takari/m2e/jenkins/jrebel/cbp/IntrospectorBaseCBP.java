@@ -7,6 +7,9 @@ import org.zeroturnaround.javarebel.integration.support.JavassistClassBytecodePr
 
 import io.takari.m2e.jenkins.jrebel.IntrospectorExt;
 
+/**
+ * Clears jexl method/field cache on class reload
+ */
 public class IntrospectorBaseCBP extends JavassistClassBytecodeProcessor {
 
   @Override
