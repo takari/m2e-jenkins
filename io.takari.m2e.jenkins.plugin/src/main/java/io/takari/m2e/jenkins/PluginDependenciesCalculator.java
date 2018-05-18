@@ -315,6 +315,11 @@ public class PluginDependenciesCalculator {
         // check latest version
         GAV newGav = latest(ga);
 
+        // do not update to latest if we depend on a newer version than what is
+        // available on update site
+        if (newGav != null && cmp(newGav.getVersion(), gav.getVersion()) < 0) {
+          newGav = null;
+        }
         if (newGav != null) {
           if (mng != null && mng.upperBound && cmp(newGav.getVersion(), mng.getVersion()) > 0) {
             newGav = mng.gav;
