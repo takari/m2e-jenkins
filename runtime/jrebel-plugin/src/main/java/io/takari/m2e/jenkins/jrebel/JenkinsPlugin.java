@@ -11,7 +11,10 @@ import org.zeroturnaround.javarebel.ReloaderFactory;
 import io.takari.m2e.jenkins.jrebel.cbp.AbstractTearOffCBP;
 import io.takari.m2e.jenkins.jrebel.cbp.CachingScriptLoaderCBP;
 import io.takari.m2e.jenkins.jrebel.cbp.IntrospectorBaseCBP;
+import io.takari.m2e.jenkins.jrebel.cbp.MethodHandleFactoryCBP;
+import io.takari.m2e.jenkins.jrebel.cbp.StaplerCBP;
 import io.takari.m2e.jenkins.jrebel.cbp.UberspectImplCBP;
+import io.takari.m2e.jenkins.jrebel.cbp.WebAppCBP;
 
 public class JenkinsPlugin implements Plugin {
 
@@ -20,6 +23,14 @@ public class JenkinsPlugin implements Plugin {
     Integration integration = IntegrationFactory.getInstance();
     Reloader reloader = ReloaderFactory.getInstance();
     ClassLoader cl = getClass().getClassLoader();
+
+    integration.addIntegrationProcessor(cl,
+        "org.kohsuke.stapler.Stapler",
+        new StaplerCBP());
+
+    integration.addIntegrationProcessor(cl,
+        "org.kohsuke.stapler.WebApp",
+        new WebAppCBP());
 
     integration.addIntegrationProcessor(cl,
         "org.kohsuke.stapler.CachingScriptLoader",
@@ -37,10 +48,16 @@ public class JenkinsPlugin implements Plugin {
         "org.apache.commons.jexl.util.introspection.IntrospectorBase",
         new IntrospectorBaseCBP());
 
+    integration.addIntegrationProcessor(cl,
+        "org.kohsuke.stapler.MethodHandleFactory",
+        new MethodHandleFactoryCBP());
+
     reloader.addClassReloadListener(new ClassEventListener() {
 
       @Override
       public void onClassEvent(int eventType, Class<?> klass) throws Exception {
+        MetaClassReloader.get().reloaded(klass);
+
         IntrospectorExt introspector = IntrospectorHelper.getIntrospector();
         if (introspector != null) {
           introspector.clearClass(klass.getName());
@@ -53,12 +70,11 @@ public class JenkinsPlugin implements Plugin {
       }
     });
 
-    // add more processors here
   }
 
   @Override
   public boolean checkDependencies(ClassLoader cl, ClassResourceSource crs) {
-    return crs.getClassResource("org.kohsuke.stapler.CachingScriptLoader") != null;
+    return crs.getClassResource("org.kohsuke.stapler.Stapler") != null;
   }
 
   @Override
