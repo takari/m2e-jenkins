@@ -24,10 +24,13 @@ import org.eclipse.core.runtime.jobs.ISchedulingRule;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
+import org.eclipse.debug.core.Launch;
+import org.eclipse.jdt.internal.launching.sourcelookup.advanced.AdvancedSourceLookupDirector;
 import org.eclipse.jdt.launching.AbstractJavaLaunchConfigurationDelegate;
 import org.eclipse.jdt.launching.ExecutionArguments;
 import org.eclipse.jdt.launching.IVMRunner;
 import org.eclipse.jdt.launching.VMRunnerConfiguration;
+import org.eclipse.jdt.launching.sourcelookup.advanced.AdvancedSourceLookup;
 import org.eclipse.m2e.core.embedder.ArtifactKey;
 import org.eclipse.m2e.core.internal.Bundles;
 import org.osgi.framework.Bundle;
@@ -49,9 +52,14 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
 
   private static final String RUNTIME_BUNDLE_SYMBOLICNAME = "io.takari.m2e.jenkins.runtime";
 
+  public JenkinsLaunchConfigurationDelegate() {
+    allowAdvancedSourcelookup();
+  }
+
   @Override
   public ILaunch getLaunch(ILaunchConfiguration configuration, String mode) throws CoreException {
-    return SourceLookupLaunchUtil.createLaunch(configuration, mode);
+    return new Launch(configuration, mode,
+        AdvancedSourceLookup.createSourceLocator(AdvancedSourceLookupDirector.ID, configuration));
   }
 
   @Override
@@ -96,39 +104,23 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
       }
     }
 
-    String[] envp = getEnvironment(configuration);
-
-    String pgmArgs = getProgramArguments(configuration);
-    String vmArgs = getVMArguments(configuration);
+    String pgmArgs = concat(descFile.getAbsolutePath(), getProgramArguments(configuration));
+    String vmArgs = concat(getVMArguments(configuration), getVMArguments(configuration, mode));
     ExecutionArguments execArgs = new ExecutionArguments(vmArgs, pgmArgs);
 
-    Map<String, Object> vmAttributesMap = getVMSpecificAttributesMap(configuration);
+    JenkinsPlugin.info("Starting jenkins with " + vmArgs);
 
     List<String> classPath = new ArrayList<>();
     Collections.addAll(classPath, getClasspath(configuration));
     classPath.addAll(getRuntimeClasspath());
 
-    List<String> vmArgsList = new ArrayList<>();
-    Collections.addAll(vmArgsList, execArgs.getVMArgumentsArray());
-
-    try {
-      URL jrUrl = JenkinsRuntimePlugin.getInstance().getJrebelPlugin();
-      if (jrUrl != null) {
-        URL localURL = FileLocator.toFileURL(jrUrl);
-        String path = new File(localURL.getFile()).getCanonicalPath();
-        vmArgsList.add("-Drebel.plugins=" + path);
-      }
-    } catch (IOException ioe) {
-    }
-
     String mainTypeName = JenkinsRuntimePlugin.getInstance().getLauncherClass();
-    VMRunnerConfiguration runnerConfig = new VMRunnerConfiguration(mainTypeName,
-        classPath.toArray(new String[classPath.size()]));
-    runnerConfig.setProgramArguments(new String[] { descFile.getAbsolutePath() });
-    runnerConfig.setEnvironment(envp);
-    runnerConfig.setVMArguments(SourceLookupLaunchUtil.configureVMArgs(vmArgsList));
+    VMRunnerConfiguration runnerConfig = new VMRunnerConfiguration(mainTypeName, classPath.toArray(new String[0]));
+    runnerConfig.setEnvironment(getEnvironment(configuration));
+    runnerConfig.setProgramArguments(execArgs.getProgramArgumentsArray());
+    runnerConfig.setVMArguments(execArgs.getVMArgumentsArray());
     runnerConfig.setWorkingDirectory(workingDirName);
-    runnerConfig.setVMSpecificAttributesMap(vmAttributesMap);
+    runnerConfig.setVMSpecificAttributesMap(getVMSpecificAttributesMap(configuration));
     runnerConfig.setBootClassPath(getBootpath(configuration));
 
     if (monitor.isCanceled()) {
@@ -146,6 +138,35 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
     }
 
     monitor.done();
+  }
+
+  @Override
+  public String getVMArguments(ILaunchConfiguration configuration) throws CoreException {
+    String vmArgs = super.getVMArguments(configuration);
+
+    try {
+      URL jrUrl = JenkinsRuntimePlugin.getInstance().getJrebelPlugin();
+      if (jrUrl != null) {
+        URL localURL = FileLocator.toFileURL(jrUrl);
+        String path = new File(localURL.getFile()).getCanonicalPath();
+        vmArgs += " -Drebel.plugins=\"" + path + "\"";
+      }
+    } catch (IOException ioe) {
+    }
+
+    return vmArgs;
+  }
+
+  private static String concat(String args1, String args2) {
+    StringBuilder args = new StringBuilder();
+    if (args1 != null && !args1.isEmpty()) {
+      args.append(args1);
+    }
+    if (args2 != null && !args2.isEmpty()) {
+      args.append(" "); //$NON-NLS-1$
+      args.append(args2);
+    }
+    return args.toString();
   }
 
   private static List<String> CLASSPATH;

@@ -2,7 +2,7 @@
 <feature
       id="io.takari.m2e.jenkins.feature"
       label="Jenkins Plugin Development Environment"
-      version="0.1.0.qualifier"
+      version="0.2.0.qualifier"
       license-feature="org.eclipse.license"
       license-feature-version="0.0.0">
    <install-handler/>
