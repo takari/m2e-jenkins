@@ -9,12 +9,8 @@ import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Deque;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
@@ -25,13 +21,7 @@ import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.versioning.ArtifactVersion;
-import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
-import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
-import org.apache.maven.artifact.versioning.Restriction;
-import org.apache.maven.artifact.versioning.VersionRange;
 import org.apache.maven.execution.MavenExecutionResult;
-import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Resource;
 import org.apache.maven.model.building.ModelBuildingRequest;
@@ -55,7 +45,6 @@ import org.eclipse.m2e.core.project.IMavenProjectFacade;
 import org.eclipse.m2e.core.project.IMavenProjectRegistry;
 
 import io.takari.m2e.jenkins.internal.JenkinsPlugin;
-import io.takari.m2e.jenkins.runtime.PluginUpdateCenter;
 
 public class JenkinsPluginProject implements IJenkinsPlugin {
 
@@ -334,7 +323,7 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     File idxFile = new File(testDir, "index");
     Files.deleteIfExists(idxFile.toPath());
     try (Writer w = new OutputStreamWriter(new FileOutputStream(idxFile), "UTF-8")) {
-      for (PluginDependency dep : findPluginDependencies(null, context, monitor)) {
+      for (PluginDependency dep : findPluginDependencies(context, monitor)) {
         IJenkinsPlugin plugin = dep.getPlugin();
         if (plugin instanceof JenkinsPluginProject) {
           continue;
@@ -356,8 +345,8 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     }
   }
 
-  private List<PluginDependency> findPluginDependencies(final PluginUpdateCenter updates,
-      IMavenExecutionContext context, IProgressMonitor monitor) throws CoreException {
+  private List<PluginDependency> findPluginDependencies(IMavenExecutionContext context, IProgressMonitor monitor)
+      throws CoreException {
     MavenProject mp = getMavenProject(monitor);
     List<PluginDependency> deps = new ArrayList<>();
 
@@ -365,15 +354,12 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
       if (monitor.isCanceled())
         break;
 
-      ArtifactKey ak = getPlugin(updates, art.getGroupId(), art.getArtifactId(), art.getVersion());
+      ArtifactKey ak = getPlugin(art.getGroupId(), art.getArtifactId(), art.getVersion());
 
       IJenkinsPlugin jp = resolvePlugin(ak.getGroupId(), ak.getArtifactId(), ak.getVersion(), mp, context, monitor);
       if (jp != null) {
         deps.add(new PluginDependency(jp, isTestScope(art.getScope()), false));
       }
-    }
-    if (updates != null) {
-      return correctVersions(deps, context, updates, monitor);
     }
     return deps;
   }
@@ -426,123 +412,8 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     return res.getProject();
   }
 
-  protected List<PluginDependency> correctVersions(List<PluginDependency> plugins, IMavenExecutionContext context,
-      PluginUpdateCenter updates, IProgressMonitor monitor) throws CoreException {
-
-    // transitive dependency plugins might contain optional dependencies on other
-    // plugins and will not be happy if older versions of such dependencies are
-    // installed, so bump their versions
-
-    Map<ArtifactKey, PluginContainer> pluginMap = new HashMap<>();
-    for (PluginDependency jp : plugins) {
-      pluginMap.put(key(jp.getPlugin()), new PluginContainer(jp));
-    }
-
-    // plugins might get processed multiple times
-    Deque<PluginDependency> q = new LinkedList<>(plugins);
-
-    while (!q.isEmpty()) {
-      PluginDependency pd = q.removeFirst();
-      IJenkinsPlugin jp = pd.getPlugin();
-      MavenProject mp = jp.getMavenProject(monitor);
-
-      List<Dependency> deps = mp.getDependencies();
-
-      for (Dependency dep : deps) {
-        ArtifactKey key = key(dep);
-        PluginContainer dc = pluginMap.get(key);
-
-        boolean existingIsOptional = (dc == null ? true : dc.getDependency().isOptional());
-        boolean considerAsOptional = pd.isOptional() || dep.isOptional();
-        boolean optional = existingIsOptional && considerAsOptional;
-
-        boolean existingIsTestScope = (dc == null ? true : dc.getDependency().isTestScope());
-        boolean considerAsTestScope = pd.isTestScope() || isTestScope(dep.getScope());
-        boolean testScope = existingIsTestScope && considerAsTestScope;
-
-        ArtifactVersion dver = ver(dep.getVersion());
-
-        ArtifactKey ak = getPlugin(updates, dep.getGroupId(), dep.getArtifactId(), dver.toString());
-
-        IJenkinsPlugin newJp = resolvePlugin(ak.getGroupId(), ak.getArtifactId(), ak.getVersion(), mp, context,
-            monitor);
-
-        if (dc == null && newJp == null)
-          continue;
-
-        if (dc != null) {
-          if (dver.compareTo(dc.getVersion()) > 0) {
-
-            if (newJp == null) {
-              throw new IllegalStateException("Cannot resolve a newer version of existing plugin " + dep);
-            }
-
-            PluginDependency newPd = new PluginDependency(newJp, testScope, optional, true /* override */);
-            q.remove(dc.getDependency());
-            dc.setPlugin(newPd);
-            q.add(newPd);
-          }
-        } else {
-          PluginDependency newPd = new PluginDependency(newJp, testScope, optional);
-          pluginMap.put(key, new PluginContainer(newPd));
-          q.add(newPd);
-        }
-      }
-    }
-
-    List<PluginDependency> result = new ArrayList<>();
-    for (PluginContainer pc : pluginMap.values()) {
-      result.add(pc.getDependency());
-    }
-    return result;
-  }
-
-  private static ArtifactKey getPlugin(PluginUpdateCenter updates, String groupId, String artifactId, String version) {
-    if (updates != null) {
-      String newVersion = updates.getVersion(groupId, artifactId);
-      if (newVersion == null && groupId.equals("org.jvnet.hudson.plugins")) {
-        // try with new groupId
-        String newGroupId = "org.jenkins-ci.plugins";
-        newVersion = updates.getVersion(newGroupId, artifactId);
-        if (newVersion != null) {
-          groupId = newGroupId;
-        }
-      }
-
-      if (newVersion != null) {
-        version = newVersion;
-      }
-    }
+  private static ArtifactKey getPlugin(String groupId, String artifactId, String version) {
     return new ArtifactKey(groupId, artifactId, version, null);
-  }
-
-  private static ArtifactVersion ver(String ver) {
-    VersionRange r;
-    try {
-      r = VersionRange.createFromVersionSpec(ver);
-    } catch (InvalidVersionSpecificationException e) {
-      throw new IllegalStateException("Can't parse version " + ver, e);
-    }
-    if (r.getRecommendedVersion() != null)
-      return r.getRecommendedVersion();
-
-    for (Restriction rx : r.getRestrictions()) {
-      if (rx.isLowerBoundInclusive()) {
-        return rx.getLowerBound();
-      }
-      if (rx.isUpperBoundInclusive()) {
-        return rx.getUpperBound();
-      }
-    }
-    throw new IllegalStateException("Can't decide which version to use " + ver);
-  }
-
-  private static ArtifactKey key(Dependency dep) {
-    return new ArtifactKey(dep.getGroupId(), dep.getArtifactId(), null, null);
-  }
-
-  private static ArtifactKey key(IJenkinsPlugin jp) {
-    return new ArtifactKey(jp.getGroupId(), jp.getArtifactId(), null, null);
   }
 
   File resolveIfNeeded(String groupId, String artifactId, String version, String type, MavenProject project,
@@ -668,28 +539,6 @@ public class JenkinsPluginProject implements IJenkinsPlugin {
     }
 
     return jps;
-  }
-
-  private static class PluginContainer {
-    PluginDependency dependency;
-    ArtifactVersion version;
-
-    public PluginContainer(PluginDependency dependency) {
-      setPlugin(dependency);
-    }
-
-    public void setPlugin(PluginDependency dependency) {
-      this.dependency = dependency;
-      this.version = new DefaultArtifactVersion(dependency.getPlugin().getVersion());
-    }
-
-    public PluginDependency getDependency() {
-      return dependency;
-    }
-
-    public ArtifactVersion getVersion() {
-      return version;
-    }
   }
 
 }

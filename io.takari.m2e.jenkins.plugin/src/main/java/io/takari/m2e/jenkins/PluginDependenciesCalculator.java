@@ -83,7 +83,25 @@ public class PluginDependenciesCalculator {
       @Override
       public DependenciesResult call(IMavenExecutionContext context, IProgressMonitor monitor) throws CoreException {
         try {
-          return doCalculate(new CalculationContext(context, monitor));
+          CalculationContext ctx = new CalculationContext(context, monitor);
+          DependenciesResult res = doCalculate(ctx);
+
+          if (ctx.hasErrors()) {
+            for (Map.Entry<GAV, List<String>> e : ctx.errors.entrySet()) {
+              GAV gav = e.getKey();
+              for (String msg : e.getValue()) {
+                if (gav != null) {
+                  JenkinsPlugin.error(gav + ": " + msg);
+                } else {
+                  JenkinsPlugin.error(msg);
+                }
+              }
+            }
+            throw new CoreException(
+                new Status(IStatus.ERROR, JenkinsPlugin.ID, "Errors while calculating launch plan, consult error log"));
+          }
+
+          return res;
         } catch (IOException e) {
           throw new CoreException(new Status(IStatus.ERROR, JenkinsPlugin.ID, e.getMessage(), e));
         }
@@ -94,21 +112,27 @@ public class PluginDependenciesCalculator {
   private DependenciesResult doCalculate(CalculationContext ctx) throws CoreException, IOException {
 
     // maven employs a 'nearest' dependency resolution strategy, but jenkins
-    // requires the lower bound of dependency is met at runtime, so for A->C:1.0,
+    // requires the lower bound of dependency is met at runtime, so for
+    // A->C:1.0,
     // B->C:2.0, we'd need a C:2.0 at runtime
 
     // find out required jenkins version from plugin selection
     String jenkinsVer = jenkinsVersion;
     for (PinnedPlugin pp : pinnedPlugins) {
-      String newVer = ctx.getJenkinsVersion(GAV.from(pp.plugin));
+      GAV gav = GAV.from(pp.plugin);
+      String newVer = ctx.getJenkinsVersion(gav);
       if (jenkinsVer == null || cmp(newVer, jenkinsVer) > 0) {
         jenkinsVer = newVer;
       }
+      if (jenkinsVersion != null && cmp(jenkinsVer, jenkinsVersion) > 0) {
+        ctx.error(null, "Requested jenkins core `" + jenkinsVersion + "` is older than `" + jenkinsVer
+            + "` required by pinned plugin " + gav);
+      }
     }
 
-    if (jenkinsVersion != null && cmp(jenkinsVer, jenkinsVersion) > 0) {
-      ctx.error(null, "Version requested (" + jenkinsVersion + ") is older than version required by pinned plugins ("
-          + jenkinsVer + ")");
+    // set plugins' jenkins core version as the baseline
+    if (jenkinsVersion == null) {
+      jenkinsVersion = jenkinsVer;
     }
 
     // first pass: map requested plugins and their dependencies
@@ -172,18 +196,19 @@ public class PluginDependenciesCalculator {
     if (updates == null) {
       return null;
     }
+    PluginUpdates pu = new PluginUpdates(updates, jenkinsVersion);
     String ver;
     if (ga.isStd()) {
-      ver = updates.getVersion(STDGROUP_JENKINS, ga.getArtifactId());
+      ver = pu.getVersion(STDGROUP_JENKINS, ga.getArtifactId());
       if (ver != null) {
         return new GAV(STDGROUP_JENKINS, ga.getArtifactId(), ver);
       }
-      ver = updates.getVersion(STDGROUP_HUDSON, ga.getArtifactId());
+      ver = pu.getVersion(STDGROUP_HUDSON, ga.getArtifactId());
       if (ver != null) {
         return new GAV(STDGROUP_HUDSON, ga.getArtifactId(), ver);
       }
     } else {
-      ver = updates.getVersion(ga.getGroupId(), ga.getArtifactId());
+      ver = pu.getVersion(ga.getGroupId(), ga.getArtifactId());
       if (ver != null) {
         return new GAV(ga, ver);
       }
@@ -219,6 +244,10 @@ public class PluginDependenciesCalculator {
     public CalculationContext(IMavenExecutionContext mctx, IProgressMonitor monitor) {
       this.mctx = mctx;
       this.monitor = monitor;
+    }
+
+    public boolean hasErrors() {
+      return !errors.isEmpty();
     }
 
     private boolean managePlugin(IJenkinsPlugin plugin, Set<GA> processed) throws CoreException {
@@ -644,8 +673,11 @@ public class PluginDependenciesCalculator {
     List<Dependency> detachedDeps = new ArrayList<>();
     for (Map.Entry<String, DetachedPlugin> e : DETACHED.entrySet()) {
       DetachedPlugin d = e.getValue();
-      if (cmp(jenkinsVersion, d.splitWhen) >= 0 // provisioned jenkins no longer contains the detached plugin
-          && cmp(pluginJenkinsVersion, d.splitWhen) < 0) { // plugin requires pre-split version of jenkins
+      if (cmp(jenkinsVersion, d.splitWhen) >= 0 // provisioned jenkins no longer
+                                                // contains the detached plugin
+          && cmp(pluginJenkinsVersion, d.splitWhen) < 0) { // plugin requires
+                                                           // pre-split version
+                                                           // of jenkins
         detachedDeps.add(new Dependency(new GAV(d.groupId, e.getKey(), d.requireVersion), false, false));
       }
     }
