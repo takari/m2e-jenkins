@@ -121,19 +121,19 @@ public class PluginDependenciesCalculator {
     for (PinnedPlugin pp : pinnedPlugins) {
       GAV gav = GAV.from(pp.plugin);
       String newVer = ctx.getJenkinsVersion(gav);
+
+      if (jenkinsVersion != null && cmp(newVer, jenkinsVersion) > 0) {
+        ctx.error(null, "Requested jenkins core `" + jenkinsVersion + "` is older than `" + newVer
+            + "` required by pinned plugin " + gav);
+      }
+
       if (jenkinsVer == null || cmp(newVer, jenkinsVer) > 0) {
         jenkinsVer = newVer;
-      }
-      if (jenkinsVersion != null && cmp(jenkinsVer, jenkinsVersion) > 0) {
-        ctx.error(null, "Requested jenkins core `" + jenkinsVersion + "` is older than `" + jenkinsVer
-            + "` required by pinned plugin " + gav);
       }
     }
 
     // set plugins' jenkins core version as the baseline
-    if (jenkinsVersion == null) {
-      jenkinsVersion = jenkinsVer;
-    }
+    jenkinsVersion = jenkinsVer;
 
     // first pass: map requested plugins and their dependencies
     for (PinnedPlugin pp : pinnedPlugins) {
