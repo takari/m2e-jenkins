@@ -314,7 +314,18 @@ public class PluginDependenciesCalculator {
       deps = new ArrayList<>();
 
       IJenkinsPlugin plugin = resolvePlugin(gav);
-      List<org.apache.maven.model.Dependency> mvnDeps = plugin.getMavenProject(monitor).getDependencies();
+      if (plugin == null) {
+        error(gav, "Cannot resolve " + gav);
+        return deps;
+      }
+
+      MavenProject pluginProject = plugin.getMavenProject(monitor);
+      if (pluginProject == null) {
+        error(gav, "Cannot get maven project for " + gav);
+        return deps;
+      }
+
+      List<org.apache.maven.model.Dependency> mvnDeps = pluginProject.getDependencies();
 
       for (org.apache.maven.model.Dependency mvnDep : mvnDeps) {
         GAV dgav = GAV.from(mvnDep);
