@@ -6,7 +6,7 @@ Developing and especially running/debugging Jenkins plugin projects in Eclipse i
 This plugin aims to save plugin developers the hassle of going through those steps as well as to benefit from m2e project configuration and dependency resolution abilities.
 
 ## Installation
-Point your eclipse to an update site at https://repository.takari.io/content/sites/m2e.extras/jenkins-dev/0.1.0/N/LATEST/
+Point your eclipse to an update site at http://takari.github.io/m2e-jenkins/repo/
 
 ## Usage
 This plugin provides m2e extension which configures jenkins plugin projects to be buildable within eclipse:
