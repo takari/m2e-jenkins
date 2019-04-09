@@ -1,0 +1,334 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?metadataRepository version='1.1.0'?>
+<repository name='io.takari.m2e.jenkins.repo' type='org.eclipse.equinox.internal.p2.metadata.repository.LocalMetadataRepository' version='1'>
+  <properties size='1'>
+    <property name='p2.timestamp' value='1554145268555'/>
+  </properties>
+  <units size='9'>
+    <unit id='io.takari.m2e.jenkins.plugin' version='0.2.0.201904011901'>
+      <update id='io.takari.m2e.jenkins.plugin' range='[0.0.0,0.2.0.201904011901)' severity='0'/>
+      <properties size='4'>
+        <property name='org.eclipse.equinox.p2.name' value='Jenkins Plugin Development Environment'/>
+        <property name='maven-groupId' value='io.takari.m2e.jenkins'/>
+        <property name='maven-artifactId' value='io.takari.m2e.jenkins.plugin'/>
+        <property name='maven-version' value='0.2.0-SNAPSHOT'/>
+      </properties>
+      <provides size='3'>
+        <provided namespace='org.eclipse.equinox.p2.iu' name='io.takari.m2e.jenkins.plugin' version='0.2.0.201904011901'/>
+        <provided namespace='osgi.bundle' name='io.takari.m2e.jenkins.plugin' version='0.2.0.201904011901'/>
+        <provided namespace='org.eclipse.equinox.p2.eclipse.type' name='bundle' version='1.0.0'/>
+      </provides>
+      <requires size='24'>
+        <required namespace='osgi.bundle' name='org.eclipse.core.resources' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.core.runtime' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.debug.core' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.debug.ui' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.jdt.core' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.jdt.debug' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.jdt.debug.ui' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.jdt.launching' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.jface' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.m2e.core' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.m2e.jdt' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.m2e.maven.runtime' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='io.takari.m2e.jenkins.runtime' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.core.variables' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.core.databinding' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.core.databinding.beans' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.core.databinding.observable' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.core.databinding.property' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.jface.databinding' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.ui.ide' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='com.ibm.icu' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.jboss.tools.maven.apt.core' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.jdt.apt.core' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='io.takari.m2e.jdt.core' range='0.0.0' optional='true' greedy='false'/>
+      </requires>
+      <artifacts size='1'>
+        <artifact classifier='osgi.bundle' id='io.takari.m2e.jenkins.plugin' version='0.2.0.201904011901'/>
+      </artifacts>
+      <touchpoint id='org.eclipse.equinox.p2.osgi' version='1.0.0'/>
+      <touchpointData size='1'>
+        <instructions size='1'>
+          <instruction key='manifest'>
+            Bundle-SymbolicName: io.takari.m2e.jenkins.plugin;singleton:=true&#xA;Bundle-Version: 0.2.0.201904011901
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id='org.jboss.tools.maven.apt.core' version='1.5.2.201812241535'>
+      <update id='org.jboss.tools.maven.apt.core' range='[0.0.0,1.5.2.201812241535)' severity='0'/>
+      <properties size='8'>
+        <property name='df_LT.Bundle-Name' value='Maven Integration for Eclipse JDT APT Core'/>
+        <property name='df_LT.Bundle-Vendor' value='JBoss by Red Hat'/>
+        <property name='org.eclipse.equinox.p2.name' value='%Bundle-Name'/>
+        <property name='org.eclipse.equinox.p2.provider' value='%Bundle-Vendor'/>
+        <property name='org.eclipse.equinox.p2.bundle.localization' value='plugin'/>
+        <property name='maven-groupId' value='org.jboss.tools.maven.apt'/>
+        <property name='maven-artifactId' value='org.jboss.tools.maven.apt.core'/>
+        <property name='maven-version' value='1.5.2-SNAPSHOT'/>
+      </properties>
+      <provides size='8'>
+        <provided namespace='org.eclipse.equinox.p2.iu' name='org.jboss.tools.maven.apt.core' version='1.5.2.201812241535'/>
+        <provided namespace='osgi.bundle' name='org.jboss.tools.maven.apt.core' version='1.5.2.201812241535'/>
+        <provided namespace='java.package' name='org.jboss.tools.maven.apt' version='0.0.0'/>
+        <provided namespace='java.package' name='org.jboss.tools.maven.apt.internal' version='0.0.0'/>
+        <provided namespace='java.package' name='org.jboss.tools.maven.apt.internal.utils' version='0.0.0'/>
+        <provided namespace='java.package' name='org.jboss.tools.maven.apt.preferences' version='0.0.0'/>
+        <provided namespace='org.eclipse.equinox.p2.eclipse.type' name='bundle' version='1.0.0'/>
+        <provided namespace='org.eclipse.equinox.p2.localization' name='df_LT' version='1.0.0'/>
+      </provides>
+      <requires size='8'>
+        <required namespace='osgi.bundle' name='org.eclipse.core.runtime' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.core.resources' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.jdt.core' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.jdt.apt.core' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.m2e.core' range='1.5.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.m2e.jdt' range='1.5.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.m2e.maven.runtime' range='1.5.0'/>
+        <required namespace='java.package' name='org.slf4j' range='1.6.2'/>
+      </requires>
+      <artifacts size='1'>
+        <artifact classifier='osgi.bundle' id='org.jboss.tools.maven.apt.core' version='1.5.2.201812241535'/>
+      </artifacts>
+      <touchpoint id='org.eclipse.equinox.p2.osgi' version='1.0.0'/>
+      <touchpointData size='1'>
+        <instructions size='1'>
+          <instruction key='manifest'>
+            Bundle-SymbolicName: org.jboss.tools.maven.apt.core;singleton:=true&#xA;Bundle-Version: 1.5.2.201812241535
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id='org.jboss.tools.maven.apt.feature.feature.group' version='1.5.2.201812241535' singleton='false'>
+      <update id='org.jboss.tools.maven.apt.feature.feature.group' range='[0.0.0,1.5.2.201812241535)' severity='0'/>
+      <properties size='12'>
+        <property name='org.eclipse.equinox.p2.name' value='%featureName'/>
+        <property name='org.eclipse.equinox.p2.description' value='%description'/>
+        <property name='org.eclipse.equinox.p2.provider' value='%providerName'/>
+        <property name='org.eclipse.equinox.p2.type.group' value='true'/>
+        <property name='maven-groupId' value='org.jboss.tools.maven.apt'/>
+        <property name='maven-artifactId' value='org.jboss.tools.maven.apt.feature'/>
+        <property name='maven-version' value='1.5.2-SNAPSHOT'/>
+        <property name='df_LT.license' value='Red Hat, Inc. licenses these features and plugins to you under certain open source licenses (or aggregations of such licenses), which in a particular case may include the Eclipse Public License, the GNU Lesser General Public License, and/or certain other open source licenses. For precise licensing details, consult the corresponding source code, or contact Red Hat, Attn: General Counsel, 100 East Davie St., Raleigh NC 27601 USA.'/>
+        <property name='df_LT.copyright' value='Copyright (c) 2011-2014 Knowledge Computing Corp, JBoss by Red Hat, Inc.&#xA;All rights reserved. This program and the accompanying materials&#xA;are made available under the terms of the Eclipse Public License v1.0&#xA;which accompanies this distribution, and is available at&#xA;http://www.eclipse.org/legal/epl-v10.html&#xA;&#xA;Contributors:&#xA;Knowledge Computing Corp. - initial API and implementation'/>
+        <property name='df_LT.featureName' value='Maven Integration for Eclipse JDT APT'/>
+        <property name='df_LT.description' value='Maven Integration for Eclipse JDT Annotation Processor Toolkit'/>
+        <property name='df_LT.providerName' value='JBoss by Red Hat'/>
+      </properties>
+      <provides size='2'>
+        <provided namespace='org.eclipse.equinox.p2.iu' name='org.jboss.tools.maven.apt.feature.feature.group' version='1.5.2.201812241535'/>
+        <provided namespace='org.eclipse.equinox.p2.localization' name='df_LT' version='1.0.0'/>
+      </provides>
+      <requires size='3'>
+        <required namespace='org.eclipse.equinox.p2.iu' name='org.jboss.tools.maven.apt.core' range='[1.5.2.201812241535,1.5.2.201812241535]'/>
+        <required namespace='org.eclipse.equinox.p2.iu' name='org.jboss.tools.maven.apt.ui' range='[1.5.2.201812241535,1.5.2.201812241535]'/>
+        <required namespace='org.eclipse.equinox.p2.iu' name='org.jboss.tools.maven.apt.feature.feature.jar' range='[1.5.2.201812241535,1.5.2.201812241535]'>
+          <filter>
+            (org.eclipse.update.install.features=true)
+          </filter>
+        </required>
+      </requires>
+      <touchpoint id='null' version='0.0.0'/>
+      <licenses size='1'>
+        <license uri='%25licenseURL' url='%25licenseURL'>
+          %license
+        </license>
+      </licenses>
+      <copyright>
+        %copyright
+      </copyright>
+    </unit>
+    <unit id='org.jboss.tools.maven.apt.ui' version='1.5.2.201812241535'>
+      <update id='org.jboss.tools.maven.apt.ui' range='[0.0.0,1.5.2.201812241535)' severity='0'/>
+      <properties size='8'>
+        <property name='df_LT.Bundle-Name' value='Maven Integration for Eclipse JDT APT UI'/>
+        <property name='df_LT.Bundle-Vendor' value='JBoss by Red Hat'/>
+        <property name='org.eclipse.equinox.p2.name' value='%Bundle-Name'/>
+        <property name='org.eclipse.equinox.p2.provider' value='%Bundle-Vendor'/>
+        <property name='org.eclipse.equinox.p2.bundle.localization' value='plugin'/>
+        <property name='maven-groupId' value='org.jboss.tools.maven.apt'/>
+        <property name='maven-artifactId' value='org.jboss.tools.maven.apt.ui'/>
+        <property name='maven-version' value='1.5.2-SNAPSHOT'/>
+      </properties>
+      <provides size='4'>
+        <provided namespace='org.eclipse.equinox.p2.iu' name='org.jboss.tools.maven.apt.ui' version='1.5.2.201812241535'/>
+        <provided namespace='osgi.bundle' name='org.jboss.tools.maven.apt.ui' version='1.5.2.201812241535'/>
+        <provided namespace='org.eclipse.equinox.p2.eclipse.type' name='bundle' version='1.0.0'/>
+        <provided namespace='org.eclipse.equinox.p2.localization' name='df_LT' version='1.0.0'/>
+      </provides>
+      <requires size='16'>
+        <required namespace='osgi.bundle' name='org.eclipse.ui' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.core.runtime' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.core.resources' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.jboss.tools.maven.apt.core' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.jdt.core' range='3.6.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.jdt.ui' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.m2e.core' range='1.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.ui.workbench.texteditor' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.jface.text' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.wst.xml.ui' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.wst.sse.core' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.wst.xml.core' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.wst.sse.ui' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.text' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.m2e.editor.xml' range='0.0.0'/>
+        <required namespace='java.package' name='org.slf4j' range='1.6.2'/>
+      </requires>
+      <artifacts size='1'>
+        <artifact classifier='osgi.bundle' id='org.jboss.tools.maven.apt.ui' version='1.5.2.201812241535'/>
+      </artifacts>
+      <touchpoint id='org.eclipse.equinox.p2.osgi' version='1.0.0'/>
+      <touchpointData size='1'>
+        <instructions size='1'>
+          <instruction key='manifest'>
+            Bundle-SymbolicName: org.jboss.tools.maven.apt.ui;singleton:=true&#xA;Bundle-Version: 1.5.2.201812241535
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id='io.takari.m2e.jenkins.feature.feature.group' version='0.2.0.201904011901' singleton='false'>
+      <update id='io.takari.m2e.jenkins.feature.feature.group' range='[0.0.0,0.2.0.201904011901)' severity='0'/>
+      <properties size='5'>
+        <property name='org.eclipse.equinox.p2.name' value='Jenkins Plugin Development Environment'/>
+        <property name='org.eclipse.equinox.p2.type.group' value='true'/>
+        <property name='maven-groupId' value='io.takari.m2e.jenkins'/>
+        <property name='maven-artifactId' value='io.takari.m2e.jenkins.feature'/>
+        <property name='maven-version' value='0.2.0-SNAPSHOT'/>
+      </properties>
+      <provides size='1'>
+        <provided namespace='org.eclipse.equinox.p2.iu' name='io.takari.m2e.jenkins.feature.feature.group' version='0.2.0.201904011901'/>
+      </provides>
+      <requires size='5'>
+        <required namespace='org.eclipse.equinox.p2.iu' name='org.jboss.tools.maven.apt.feature.feature.group' range='[1.5.2.201812241535,1.5.2.201812241535]'/>
+        <required namespace='org.eclipse.equinox.p2.iu' name='org.jboss.tools.maven.apt.feature.feature.group' range='1.2.0'/>
+        <required namespace='org.eclipse.equinox.p2.iu' name='io.takari.m2e.jenkins.plugin' range='[0.2.0.201904011901,0.2.0.201904011901]'/>
+        <required namespace='org.eclipse.equinox.p2.iu' name='io.takari.m2e.jenkins.runtime' range='[0.2.0.20190401-1856,0.2.0.20190401-1856]'/>
+        <required namespace='org.eclipse.equinox.p2.iu' name='io.takari.m2e.jenkins.feature.feature.jar' range='[0.2.0.201904011901,0.2.0.201904011901]'>
+          <filter>
+            (org.eclipse.update.install.features=true)
+          </filter>
+        </required>
+      </requires>
+      <touchpoint id='null' version='0.0.0'/>
+    </unit>
+    <unit id='io.takari.m2e.jenkins.runtime' version='0.2.0.20190401-1856'>
+      <update id='io.takari.m2e.jenkins.runtime' range='[0.0.0,0.2.0.20190401-1856)' severity='0'/>
+      <properties size='5'>
+        <property name='org.eclipse.equinox.p2.name' value='%Bundle-Name'/>
+        <property name='org.eclipse.equinox.p2.provider' value='%Bundle-Vendor'/>
+        <property name='maven-groupId' value='io.takari.m2e.jenkins'/>
+        <property name='maven-artifactId' value='io.takari.m2e.jenkins.runtime'/>
+        <property name='maven-version' value='0.2.0-SNAPSHOT'/>
+      </properties>
+      <provides size='6'>
+        <provided namespace='org.eclipse.equinox.p2.iu' name='io.takari.m2e.jenkins.runtime' version='0.2.0.20190401-1856'/>
+        <provided namespace='osgi.bundle' name='io.takari.m2e.jenkins.runtime' version='0.2.0.20190401-1856'/>
+        <provided namespace='java.package' name='io.takari.m2e.jenkins.runtime' version='0.0.0'/>
+        <provided namespace='java.package' name='io.takari.m2e.jenkins.launcher.desc' version='0.0.0'/>
+        <provided namespace='java.package' name='net.java.sezpoz.impl' version='0.0.0'/>
+        <provided namespace='org.eclipse.equinox.p2.eclipse.type' name='bundle' version='1.0.0'/>
+      </provides>
+      <requires size='1'>
+        <required namespace='osgi.bundle' name='org.eclipse.osgi' range='0.0.0'/>
+      </requires>
+      <artifacts size='1'>
+        <artifact classifier='osgi.bundle' id='io.takari.m2e.jenkins.runtime' version='0.2.0.20190401-1856'/>
+      </artifacts>
+      <touchpoint id='org.eclipse.equinox.p2.osgi' version='1.0.0'/>
+      <touchpointData size='1'>
+        <instructions size='2'>
+          <instruction key='zipped'>
+            true
+          </instruction>
+          <instruction key='manifest'>
+            Bundle-SymbolicName: io.takari.m2e.jenkins.runtime;singleton:=true&#xA;Bundle-Version: 0.2.0.20190401-1856
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id='201904011901.io.takari.m2e.jenkins' version='1.0.0.03-cE2qM67735K3A355K35'>
+      <properties size='2'>
+        <property name='org.eclipse.equinox.p2.name' value='M2E Connectors'/>
+        <property name='org.eclipse.equinox.p2.type.category' value='true'/>
+      </properties>
+      <provides size='1'>
+        <provided namespace='org.eclipse.equinox.p2.iu' name='201904011901.io.takari.m2e.jenkins' version='1.0.0.03-cE2qM67735K3A355K35'/>
+      </provides>
+      <requires size='1'>
+        <required namespace='org.eclipse.equinox.p2.iu' name='io.takari.m2e.jenkins.feature.feature.group' range='[0.2.0.201904011901,0.2.0.201904011901]'/>
+      </requires>
+      <touchpoint id='null' version='0.0.0'/>
+    </unit>
+    <unit id='org.jboss.tools.maven.apt.feature.feature.jar' version='1.5.2.201812241535'>
+      <properties size='12'>
+        <property name='org.eclipse.equinox.p2.name' value='%featureName'/>
+        <property name='org.eclipse.equinox.p2.description' value='%description'/>
+        <property name='org.eclipse.equinox.p2.provider' value='%providerName'/>
+        <property name='org.eclipse.update.feature.plugin' value='org.jboss.tools.maven.apt.core'/>
+        <property name='df_LT.license' value='Red Hat, Inc. licenses these features and plugins to you under certain open source licenses (or aggregations of such licenses), which in a particular case may include the Eclipse Public License, the GNU Lesser General Public License, and/or certain other open source licenses. For precise licensing details, consult the corresponding source code, or contact Red Hat, Attn: General Counsel, 100 East Davie St., Raleigh NC 27601 USA.'/>
+        <property name='df_LT.copyright' value='Copyright (c) 2011-2014 Knowledge Computing Corp, JBoss by Red Hat, Inc.&#xA;All rights reserved. This program and the accompanying materials&#xA;are made available under the terms of the Eclipse Public License v1.0&#xA;which accompanies this distribution, and is available at&#xA;http://www.eclipse.org/legal/epl-v10.html&#xA;&#xA;Contributors:&#xA;Knowledge Computing Corp. - initial API and implementation'/>
+        <property name='df_LT.featureName' value='Maven Integration for Eclipse JDT APT'/>
+        <property name='df_LT.description' value='Maven Integration for Eclipse JDT Annotation Processor Toolkit'/>
+        <property name='df_LT.providerName' value='JBoss by Red Hat'/>
+        <property name='maven-groupId' value='org.jboss.tools.maven.apt'/>
+        <property name='maven-artifactId' value='org.jboss.tools.maven.apt.feature'/>
+        <property name='maven-version' value='1.5.2-SNAPSHOT'/>
+      </properties>
+      <provides size='3'>
+        <provided namespace='org.eclipse.equinox.p2.iu' name='org.jboss.tools.maven.apt.feature.feature.jar' version='1.5.2.201812241535'/>
+        <provided namespace='org.eclipse.equinox.p2.eclipse.type' name='feature' version='1.0.0'/>
+        <provided namespace='org.eclipse.update.feature' name='org.jboss.tools.maven.apt.feature' version='1.5.2.201812241535'/>
+      </provides>
+      <filter>
+        (org.eclipse.update.install.features=true)
+      </filter>
+      <artifacts size='1'>
+        <artifact classifier='org.eclipse.update.feature' id='org.jboss.tools.maven.apt.feature' version='1.5.2.201812241535'/>
+      </artifacts>
+      <touchpoint id='org.eclipse.equinox.p2.osgi' version='1.0.0'/>
+      <touchpointData size='1'>
+        <instructions size='1'>
+          <instruction key='zipped'>
+            true
+          </instruction>
+        </instructions>
+      </touchpointData>
+      <licenses size='1'>
+        <license uri='%25licenseURL' url='%25licenseURL'>
+          %license
+        </license>
+      </licenses>
+      <copyright>
+        %copyright
+      </copyright>
+    </unit>
+    <unit id='io.takari.m2e.jenkins.feature.feature.jar' version='0.2.0.201904011901'>
+      <properties size='4'>
+        <property name='org.eclipse.equinox.p2.name' value='Jenkins Plugin Development Environment'/>
+        <property name='maven-groupId' value='io.takari.m2e.jenkins'/>
+        <property name='maven-artifactId' value='io.takari.m2e.jenkins.feature'/>
+        <property name='maven-version' value='0.2.0-SNAPSHOT'/>
+      </properties>
+      <provides size='3'>
+        <provided namespace='org.eclipse.equinox.p2.iu' name='io.takari.m2e.jenkins.feature.feature.jar' version='0.2.0.201904011901'/>
+        <provided namespace='org.eclipse.equinox.p2.eclipse.type' name='feature' version='1.0.0'/>
+        <provided namespace='org.eclipse.update.feature' name='io.takari.m2e.jenkins.feature' version='0.2.0.201904011901'/>
+      </provides>
+      <filter>
+        (org.eclipse.update.install.features=true)
+      </filter>
+      <artifacts size='1'>
+        <artifact classifier='org.eclipse.update.feature' id='io.takari.m2e.jenkins.feature' version='0.2.0.201904011901'/>
+      </artifacts>
+      <touchpoint id='org.eclipse.equinox.p2.osgi' version='1.0.0'/>
+      <touchpointData size='1'>
+        <instructions size='1'>
+          <instruction key='zipped'>
+            true
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+  </units>
+</repository>

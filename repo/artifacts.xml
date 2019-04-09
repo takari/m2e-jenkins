@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?artifactRepository version='1.1.0'?>
+<repository name='io.takari.m2e.jenkins.repo' type='org.eclipse.equinox.p2.artifact.repository.simpleRepository' version='1'>
+  <properties size='2'>
+    <property name='p2.timestamp' value='1554145268549'/>
+    <property name='publishPackFilesAsSiblings' value='true'/>
+  </properties>
+  <mappings size='5'>
+    <rule filter='(&amp; (classifier=osgi.bundle) (format=packed))' output='${repoUrl}/plugins/${id}_${version}.jar.pack.gz'/>
+    <rule filter='(&amp; (classifier=osgi.bundle))' output='${repoUrl}/plugins/${id}_${version}.jar'/>
+    <rule filter='(&amp; (classifier=binary))' output='${repoUrl}/binary/${id}_${version}'/>
+    <rule filter='(&amp; (classifier=org.eclipse.update.feature) (format=packed))' output='${repoUrl}/features/${id}_${version}.jar.pack.gz'/>
+    <rule filter='(&amp; (classifier=org.eclipse.update.feature))' output='${repoUrl}/features/${id}_${version}.jar'/>
+  </mappings>
+  <artifacts size='6'>
+    <artifact classifier='org.eclipse.update.feature' id='org.jboss.tools.maven.apt.feature' version='1.5.2.201812241535'>
+      <properties size='1'>
+        <property name='download.size' value='6487'/>
+      </properties>
+    </artifact>
+    <artifact classifier='org.eclipse.update.feature' id='io.takari.m2e.jenkins.feature' version='0.2.0.201904011901'>
+      <properties size='6'>
+        <property name='artifact.size' value='10055'/>
+        <property name='download.size' value='10055'/>
+        <property name='maven-groupId' value='io.takari.m2e.jenkins'/>
+        <property name='maven-artifactId' value='io.takari.m2e.jenkins.feature'/>
+        <property name='maven-version' value='0.2.0-SNAPSHOT'/>
+        <property name='download.contentType' value='application/zip'/>
+      </properties>
+    </artifact>
+    <artifact classifier='osgi.bundle' id='io.takari.m2e.jenkins.plugin' version='0.2.0.201904011901'>
+      <properties size='5'>
+        <property name='artifact.size' value='107612'/>
+        <property name='download.size' value='107612'/>
+        <property name='maven-groupId' value='io.takari.m2e.jenkins'/>
+        <property name='maven-artifactId' value='io.takari.m2e.jenkins.plugin'/>
+        <property name='maven-version' value='0.2.0-SNAPSHOT'/>
+      </properties>
+    </artifact>
+    <artifact classifier='osgi.bundle' id='io.takari.m2e.jenkins.runtime' version='0.2.0.20190401-1856'>
+      <properties size='6'>
+        <property name='artifact.size' value='7852657'/>
+        <property name='download.size' value='7852657'/>
+        <property name='download.md5' value='4c19ffe8e560f9fcc701ae281c3e4aa9'/>
+        <property name='maven-groupId' value='io.takari.m2e.jenkins'/>
+        <property name='maven-artifactId' value='io.takari.m2e.jenkins.runtime'/>
+        <property name='maven-version' value='0.2.0-SNAPSHOT'/>
+      </properties>
+    </artifact>
+    <artifact classifier='osgi.bundle' id='org.jboss.tools.maven.apt.ui' version='1.5.2.201812241535'>
+      <properties size='1'>
+        <property name='download.size' value='42959'/>
+      </properties>
+    </artifact>
+    <artifact classifier='osgi.bundle' id='org.jboss.tools.maven.apt.core' version='1.5.2.201812241535'>
+      <properties size='1'>
+        <property name='download.size' value='55536'/>
+      </properties>
+    </artifact>
+  </artifacts>
+</repository>
