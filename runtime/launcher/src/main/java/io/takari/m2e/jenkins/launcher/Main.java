@@ -134,7 +134,7 @@ public class Main {
 
       // copy plugin file under jenkinsHome
       File pf = new File(pd.getPluginFile());
-      String ext = pf.getName().endsWith(".hpl") ? ".hpl" : ".jpi";
+      String ext = pf.getName().endsWith(".hpl") ? ".hpl" : ".jpl";
       File target = new File(pluginsDir, pd.getId() + ext);
 
       log.info("Copying plugin: " + pd.getPluginFile() + " to " + target.getName());
