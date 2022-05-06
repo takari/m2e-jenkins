@@ -11,7 +11,7 @@ import org.apache.commons.io.FileUtils;
 import ch.qos.logback.classic.spi.ClassPackagingData;
 import ch.qos.logback.classic.spi.IThrowableProxy;
 import ch.qos.logback.classic.spi.StackTraceElementProxy;
-import sun.reflect.Reflection;
+import io.takari.Reflection;
 
 @SuppressWarnings({ "rawtypes", "restriction" })
 public class PackagingDataCalculator {

@@ -1,32 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>io.takari.m2e.jenkins</groupId>
   <artifactId>runtime</artifactId>
   <version>0.2.0-SNAPSHOT</version>
   <packaging>pom</packaging>
-  
+
   <properties>
     <maven.build.timestamp.format>yyyyMMdd-HHmm</maven.build.timestamp.format>
     <osgi-version-qualifier>${maven.build.timestamp}</osgi-version-qualifier>
     <maven-bundle-plugin.version>3.0.1</maven-bundle-plugin.version>
   </properties>
-  
+
   <modules>
     <module>launcher</module>
     <module>io.takari.m2e.jenkins.runtime</module>
     <!-- <module>jrebel-plugin</module> -->
   </modules>
-  
   <build>
     <pluginManagement>
       <plugins>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.1</version>
+          <version>3.8.0</version>
           <configuration>
             <source>1.7</source>
             <target>1.7</target>
@@ -80,7 +79,7 @@
               <groupId>org.apache.felix</groupId>
               <artifactId>maven-bundle-plugin</artifactId>
               <configuration>
-                  <!-- PDE does not honour custom manifest location -->
+                <!-- PDE does not honour custom manifest location -->
                 <manifestLocation>META-INF</manifestLocation>
               </configuration>
             </plugin>

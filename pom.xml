@@ -43,7 +43,7 @@
     <repository>
       <id>m2e-takari</id>
       <layout>p2</layout>
-      <url>http://takari.github.io/m2e-jenkins/repo/</url>
+      <url>https://takari.github.io/io.takari.m2e.lifecycle/repo/</url>
     </repository>
   </repositories>
 
