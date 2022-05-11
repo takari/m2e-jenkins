@@ -1,11 +1,19 @@
 package io.takari.m2e.jenkins.launcher;
 
+import static java.util.Objects.isNull;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -33,6 +41,7 @@ import ch.qos.logback.classic.LoggerContext;
 import io.takari.m2e.jenkins.launcher.desc.Descriptor;
 import io.takari.m2e.jenkins.launcher.desc.PluginDesc;
 import io.takari.m2e.jenkins.launcher.log.JettyLogWrapper;
+import sun.misc.Unsafe;
 
 public class Main {
 
@@ -57,6 +66,8 @@ public class Main {
       log.info("Usage: launcher.jar <descriptorLocation>");
       return;
     }
+
+    dumpAppRuntime(args);
 
     String descLocation = args[0];
     Descriptor desc = Descriptor.read(new File(descLocation));
@@ -150,14 +161,83 @@ public class Main {
       setSystemPropertyIfEmpty("stapler.resourcePath", res.toString());
     }
 
-    runServer(desc, tmpDir);
+    runServer(desc, tmpDir, workDir);
+  }
+
+  private static void dumpAppRuntime(String[] args) {
+    log.info("launcher.jar {}", args == null ? "<empty>" : String.join(" ", args));
+
+    log.info("Java home: {}", System.getProperty("java.home"));
+    log.info("Java version: {} - {}", System.getProperty("java.runtime.name"), System.getProperty("java.version"));
+
+    try {
+      ModuleLayer.boot().modules().stream().map(m -> m.getClassLoader()).collect(Collectors.toSet()).stream()
+          .forEach(c -> dumpModules(c));
+
+      dumpJarsUrls(ClassLoader.getPlatformClassLoader());
+      dumpJarsUrls(ClassLoader.getSystemClassLoader());
+
+    } catch (Throwable t) {
+      log.error("Dump of runtime failed", t);
+      throw new IllegalStateException(t);
+    }
+  }
+
+
+  private static void dumpJarsUrls(ClassLoader cl) {
+    URL[] urls = getUrls(cl);
+    String res = urls == null ? "<empty>"
+        : Arrays.asList(urls).stream().map(m -> m.toExternalForm()).collect(Collectors.joining(", "));
+    log.info("Classloader urls: {}\n{}", toName(cl), res);
+  }
+
+  @SuppressWarnings({ "unchecked" })
+  public static URL[] getUrls(ClassLoader classLoader) {
+    if (classLoader instanceof URLClassLoader) {
+      return ((URLClassLoader) classLoader).getURLs();
+    }
+
+    // jdk9
+    if (classLoader.getClass().getName().startsWith("jdk.internal.loader.ClassLoaders$")) {
+      try {
+        Field field = Unsafe.class.getDeclaredField("theUnsafe");
+        field.setAccessible(true);
+        Unsafe unsafe = (Unsafe) field.get(null);
+
+        // jdk.internal.loader.ClassLoaders.AppClassLoader.ucp
+        Field ucpField = classLoader.getClass().getDeclaredField("ucp");
+        long ucpFieldOffset = unsafe.objectFieldOffset(ucpField);
+        Object ucpObject = unsafe.getObject(classLoader, ucpFieldOffset);
+
+        // jdk.internal.loader.URLClassPath.path
+        Field pathField = ucpField.getType().getDeclaredField("path");
+        long pathFieldOffset = unsafe.objectFieldOffset(pathField);
+        ArrayList<URL> path = (ArrayList<URL>) unsafe.getObject(ucpObject, pathFieldOffset);
+
+        return path.toArray(new URL[path.size()]);
+      } catch (NoSuchFieldException unimportant) {
+      } catch (Exception e) {
+        e.printStackTrace();
+        return null;
+      }
+    }
+    return null;
+  }
+
+  private static void dumpModules(ClassLoader classLoader) {
+    log.info("Classloader: {}\n{}", toName(classLoader), ModuleLayer.boot().modules().stream()
+        .filter(m -> classLoader == m.getClassLoader()).map(m -> m.getName()).collect(Collectors.joining(", ")));
+  }
+
+  private static String toName(ClassLoader classloder) {
+    return isNull(classloder) ? "bootstrap" : classloder.getName();
   }
 
   private static void writeVersion(File file, String version) throws IOException {
     FileUtils.write(file, version);
   }
 
-  private static void runServer(Descriptor desc, File tmpDir) throws Exception {
+  private static void runServer(Descriptor desc, File tmpDir, File workDir) throws Exception {
     Resource.setDefaultUseCaches(false);
 
     Server server = new Server();
@@ -200,12 +280,13 @@ public class Main {
     WebAppContext webapp = new WebAppContext();
     webapp.setContextPath(desc.getContext());
     contexts.addHandler(webapp);
-    configureWebApplication(webapp, desc, tmpDir);
+    configureWebApplication(webapp, desc, tmpDir, workDir);
     server.start();
     server.join();
   }
 
-  private static void configureWebApplication(WebAppContext webapp, Descriptor desc, File tmpDir) throws Exception {
+  private static void configureWebApplication(WebAppContext webapp, Descriptor desc,
+      File tmpDir, File workDir) throws Exception {
 
     File webAppFile = new File(desc.getJenkinsWar());
     webapp.setWar(webAppFile.getCanonicalPath());
@@ -218,8 +299,10 @@ public class Main {
     }
 
     // cf. https://wiki.jenkins-ci.org/display/JENKINS/Jetty
+    String realmConfig = provideDefaultRealmConfig(workDir);
     HashLoginService hashLoginService = (new HashLoginService("Jenkins Realm"));
-    hashLoginService.setConfig("work/etc/realm.properties");
+    hashLoginService.setConfig(realmConfig);
+
     webapp.getSecurityHandler().setLoginService(hashLoginService);
 
     webapp.setAttribute("org.eclipse.jetty.server.webapp.WebInfIncludeJarPattern", ".*/classes/.*");
@@ -227,7 +310,7 @@ public class Main {
     // different port,
     // use different session cookie names. Otherwise they can mix up. See
     // http://stackoverflow.com/questions/1612177/are-http-cookies-port-specific
-    webapp.getSessionHandler().getSessionManager().getSessionCookieConfig()
+    webapp.getSessionHandler().getSessionCookieConfig()
         .setName("JSESSIONID." + UUID.randomUUID().toString().replace("-", "").substring(0, 8));
 
     try {
@@ -235,11 +318,31 @@ public class Main {
       // target/classes
       // via classloader magic
       WebAppClassLoader wacl = new WebAppClassLoader(
-          new JettyAndServletApiOnlyClassLoader(null, Main.class.getClassLoader()), webapp);
+          new JettyAndServletApiOnlyClassLoader(ClassLoader.getPlatformClassLoader(),
+              ClassLoader.getSystemClassLoader()),
+          webapp);
       webapp.setClassLoader(wacl);
     } catch (IOException e) {
       throw new Error(e);
     }
+  }
+
+  private static String provideDefaultRealmConfig(File workDir) throws IOException {
+    String jenkinsEtc = "work/etc/";
+    String realmConfig = jenkinsEtc + "realm.properties";
+
+    File fileRealmConfig = new File(workDir, realmConfig);
+    if (!fileRealmConfig.exists()) {
+      File dirJenkinsEtc = new File(workDir, jenkinsEtc);
+      if (!dirJenkinsEtc.exists()) {
+        dirJenkinsEtc.mkdirs();
+        log.info("Work dir created: {}", workDir);
+      }
+      fileRealmConfig.createNewFile();
+      log.info("New empty realm config created: {}", fileRealmConfig);
+    }
+
+    return realmConfig;
   }
 
   private static final String VERSION_PATH = "META-INF/maven/org.jenkins-ci.main/jenkins-war/pom.properties";

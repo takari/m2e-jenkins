@@ -24,7 +24,7 @@ import org.jboss.tools.maven.apt.preferences.AnnotationProcessingMode;
 import org.jboss.tools.maven.apt.preferences.IPreferencesManager;
 import org.osgi.framework.Bundle;
 
-import io.takari.m2e.jenkins.JenkinsPluginProject;
+import io.takari.m2e.jenkins.plugin.JenkinsPluginProject;
 
 public class JenkinsProjectConfigurator extends AbstractProjectConfigurator {
 

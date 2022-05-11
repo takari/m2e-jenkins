@@ -1,35 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>io.takari.m2e.jenkins</groupId>
   <artifactId>runtime</artifactId>
   <version>0.2.0-SNAPSHOT</version>
   <packaging>pom</packaging>
-  
+
   <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <maven.build.timestamp.format>yyyyMMdd-HHmm</maven.build.timestamp.format>
     <osgi-version-qualifier>${maven.build.timestamp}</osgi-version-qualifier>
-    <maven-bundle-plugin.version>3.0.1</maven-bundle-plugin.version>
+    <maven-bundle-plugin.version>5.1.6</maven-bundle-plugin.version>
+    <osgi.execution.runtime>JavaSE-9</osgi.execution.runtime>
+    <maven.compiler.target>9</maven.compiler.target>
+    <maven.compiler.source>9</maven.compiler.source>
+    <tychoVersion>2.7.3</tychoVersion>
+    <takari.lifecycleVersion>2.0.7</takari.lifecycleVersion>
   </properties>
-  
+
   <modules>
     <module>launcher</module>
     <module>io.takari.m2e.jenkins.runtime</module>
     <!-- <module>jrebel-plugin</module> -->
   </modules>
-  
+
   <build>
     <pluginManagement>
       <plugins>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.1</version>
+          <version>3.8.0</version>
           <configuration>
-            <source>1.7</source>
-            <target>1.7</target>
+            <source>${maven.compiler.source}</source>
+            <target>${maven.compiler.target}</target>
           </configuration>
         </plugin>
         <plugin>
@@ -47,7 +53,7 @@
 
               <Bundle-SymbolicName>${project.artifactId};singleton:=true</Bundle-SymbolicName>
               <Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>
-              <Bundle-RequiredExecutionEnvironment>JavaSE-1.7,JavaSE-1.8</Bundle-RequiredExecutionEnvironment>
+              <Bundle-RequiredExecutionEnvironment>JavaSE-1.8</Bundle-RequiredExecutionEnvironment>
               <Bundle-Name>%Bundle-Name</Bundle-Name>
               <Bundle-Vendor>%Bundle-Vendor</Bundle-Vendor>
               <Bundle-ClassPath>{maven-dependencies}</Bundle-ClassPath>
@@ -61,7 +67,7 @@
       </plugins>
     </pluginManagement>
   </build>
-
+  
   <profiles>
     <profile>
       <id>m2e</id>
@@ -77,11 +83,44 @@
         <pluginManagement>
           <plugins>
             <plugin>
+              <groupId>org.eclipse.m2e</groupId>
+              <artifactId>lifecycle-mapping</artifactId>
+              <version>1.0.0</version>
+              <configuration>
+                <lifecycleMappingMetadata>
+                  <pluginExecutions>
+                    <pluginExecution>
+                      <pluginExecutionFilter>
+                        <groupId>org.apache.felix</groupId>
+                        <artifactId>maven-bundle-plugin</artifactId>
+                        <versionRange>[5.1.6,)</versionRange>
+                        <goals>
+                          <goal>manifest</goal>
+                          <goal>bundle</goal>
+                        </goals>
+                      </pluginExecutionFilter>
+                      <action>
+                        <execute>
+                          <runOnConfiguration>true</runOnConfiguration>
+                        </execute>
+                        <execute>
+                          <runOnIncremental>true</runOnIncremental>
+                        </execute>
+                      </action>
+                    </pluginExecution>
+                  </pluginExecutions>
+                </lifecycleMappingMetadata>
+              </configuration>
+            </plugin>
+
+            <plugin>
               <groupId>org.apache.felix</groupId>
               <artifactId>maven-bundle-plugin</artifactId>
+              <version>${maven-bundle-plugin.version}</version>
               <configuration>
-                  <!-- PDE does not honour custom manifest location -->
+                <!-- PDE does not honour custom manifest location -->
                 <manifestLocation>META-INF</manifestLocation>
+                <supportIncrementalBuild>false</supportIncrementalBuild>
               </configuration>
             </plugin>
           </plugins>
@@ -89,4 +128,5 @@
       </build>
     </profile>
   </profiles>
+
 </project>

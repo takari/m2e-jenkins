@@ -1,0 +1,5 @@
+{
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.configuration.maven.userSettings": "~/.m2/settings-plugins.xml",
+  "maven.view": "hierarchical"
+}

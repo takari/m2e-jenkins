@@ -14,12 +14,14 @@
   <packaging>pom</packaging>
 
   <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <repositoryPathId>jenkins-dev</repositoryPathId>
     <p2MetadataName>Jenkins Plugin Development Environment</p2MetadataName>
     
-    <eclipse-repo.url>http://download.eclipse.org/releases/photon</eclipse-repo.url>
-    <m2e-core.url>https://repo1.maven.org/maven2/.m2e/connectors/m2e/1.10.0/N/LATEST/</m2e-core.url>
-    <maven-bundle-plugin.version>3.0.1</maven-bundle-plugin.version>
+    <eclipse-repo.url>https://download.eclipse.org/releases/2022-06/</eclipse-repo.url>
+    <m2e-core.url>https://download.eclipse.org/technology/m2e/releases/1.20.1/</m2e-core.url>
+    <tychoVersion>2.7.3</tychoVersion>
   </properties>
 
   <licenses>
@@ -43,7 +45,7 @@
     <repository>
       <id>m2e-takari</id>
       <layout>p2</layout>
-      <url>http://takari.github.io/m2e-jenkins/repo/</url>
+      <url>https://takari.github.io/io.takari.m2e.lifecycle/repo/</url>
     </repository>
   </repositories>
 
@@ -72,16 +74,6 @@
         </configuration>
       </plugin>
     </plugins>
-
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>org.apache.felix</groupId>
-          <artifactId>maven-bundle-plugin</artifactId>
-          <version>${maven-bundle-plugin.version}</version>
-        </plugin>
-      </plugins>
-    </pluginManagement>
   </build>
 
   <profiles>
@@ -97,6 +89,64 @@
         <!-- this must be built separately during command line, but should be part of the same m2e workspace -->
         <module>runtime</module>
       </modules>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>org.eclipse.m2e</groupId>
+              <artifactId>lifecycle-mapping</artifactId>
+              <version>1.0.0</version>
+              <configuration>
+                <lifecycleMappingMetadata>
+                  <pluginExecutions>
+                    <pluginExecution>
+                      <pluginExecutionFilter>
+                        <groupId>org.eclipse.tycho</groupId>
+                        <artifactId>target-platform-configuration</artifactId>
+                        <versionRange>[2.7.3,)</versionRange>
+                        <goals>
+                          <goal>target-platform</goal>
+                        </goals>
+                      </pluginExecutionFilter>
+                      <action>
+                        <ignore/> 
+                      </action>
+                    </pluginExecution>
+                    
+                    <pluginExecution>
+                      <pluginExecutionFilter>
+                        <groupId>org.eclipse.tycho</groupId>
+                        <artifactId>tycho-ds-plugin</artifactId>
+                        <versionRange>[2.7.3,)</versionRange>
+                        <goals>
+                          <goal>declarative-services</goal>
+                        </goals>
+                      </pluginExecutionFilter>
+                      <action>
+                        <ignore/>
+                      </action>
+                    </pluginExecution>
+                    
+                    <pluginExecution>
+                      <pluginExecutionFilter>
+                        <groupId>org.eclipse.tycho</groupId>
+                        <artifactId>tycho-compiler-plugin </artifactId>
+                        <versionRange>[2.7.3,)</versionRange>
+                        <goals>
+                          <goal>validate-classpath</goal>
+                        </goals>
+                      </pluginExecutionFilter>
+                      <action>
+                        <ignore/>
+                      </action>
+                    </pluginExecution>
+                  </pluginExecutions>
+                </lifecycleMappingMetadata>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
     </profile>
   </profiles>
 </project>

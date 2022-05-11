@@ -1,11 +1,11 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Jenkins Plugin Development Environment
+Bundle-Vendor: Takari.io - m2e jenkins
 Bundle-SymbolicName: io.takari.m2e.jenkins.plugin;singleton:=true
 Bundle-Version: 0.2.0.qualifier
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7,
- JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ClassPath: .
 Require-Bundle: org.eclipse.core.resources,
  org.eclipse.core.runtime,
@@ -30,5 +30,7 @@ Require-Bundle: org.eclipse.core.resources,
  com.ibm.icu,
  org.jboss.tools.maven.apt.core,
  org.eclipse.jdt.apt.core,
- io.takari.m2e.jdt.core;resolution:=optional
+ io.takari.m2e.jdt.core;resolution:=optional,
+ org.apache.xml.resolver;bundle-version="1.2.0"
 Bundle-Activator: io.takari.m2e.jenkins.internal.JenkinsPlugin
+Automatic-Module-Name: io.takari.m2e.jenkins.plugin

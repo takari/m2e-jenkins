@@ -18,7 +18,7 @@ import org.eclipse.m2e.core.project.configurator.AbstractBuildParticipant2;
 import org.eclipse.m2e.core.project.configurator.AbstractProjectConfigurator;
 import org.eclipse.m2e.core.project.configurator.ProjectConfigurationRequest;
 
-import io.takari.m2e.jenkins.JenkinsPluginProject;
+import io.takari.m2e.jenkins.plugin.JenkinsPluginProject;
 
 public class JenkinsLocalizerProjectConfigurator extends AbstractProjectConfigurator {
 

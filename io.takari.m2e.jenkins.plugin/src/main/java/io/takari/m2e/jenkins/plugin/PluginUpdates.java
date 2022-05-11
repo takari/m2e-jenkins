@@ -1,4 +1,4 @@
-package io.takari.m2e.jenkins;
+package io.takari.m2e.jenkins.plugin;
 
 import io.takari.m2e.jenkins.runtime.PluginUpdateCenter;
 
