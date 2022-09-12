@@ -41,7 +41,6 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.dialogs.ContainerSelectionDialog;
 
-import io.takari.m2e.jenkins.JenkinsPluginProject;
 import io.takari.m2e.jenkins.internal.JenkinsPlugin;
 import io.takari.m2e.jenkins.internal.launch.JenkinsLaunchConfig;
 import io.takari.m2e.jenkins.internal.launch.LaunchingUtils;
@@ -49,6 +48,7 @@ import io.takari.m2e.jenkins.internal.ui.databinding.IntegerToStringConverter;
 import io.takari.m2e.jenkins.internal.ui.databinding.IntegerValidator;
 import io.takari.m2e.jenkins.internal.ui.databinding.SetSelectionObservable;
 import io.takari.m2e.jenkins.internal.ui.databinding.StringToIntegerConverter;
+import io.takari.m2e.jenkins.plugin.JenkinsPluginProject;
 
 public class JenkinsMainTab extends JavaLaunchTab {
 

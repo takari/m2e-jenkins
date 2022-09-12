@@ -13,10 +13,10 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 
-import io.takari.m2e.jenkins.JenkinsPluginProject;
 import io.takari.m2e.jenkins.internal.idx.AnnotationIndexer;
 import io.takari.m2e.jenkins.internal.idx.HudsonAnnIndexer;
 import io.takari.m2e.jenkins.internal.idx.SezpozIndexer;
+import io.takari.m2e.jenkins.plugin.JenkinsPluginProject;
 
 public class JenkinsBuilder extends IncrementalProjectBuilder {
 

@@ -7,9 +7,11 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
@@ -34,14 +36,18 @@ import org.eclipse.jdt.launching.sourcelookup.advanced.AdvancedSourceLookup;
 import org.eclipse.m2e.core.embedder.ArtifactKey;
 import org.eclipse.m2e.core.internal.Bundles;
 import org.osgi.framework.Bundle;
+import org.osgi.framework.namespace.BundleNamespace;
+import org.osgi.framework.namespace.PackageNamespace;
+import org.osgi.framework.wiring.BundleWire;
+import org.osgi.framework.wiring.BundleWiring;
 
-import io.takari.m2e.jenkins.IJenkinsPlugin;
-import io.takari.m2e.jenkins.JenkinsPluginProject;
-import io.takari.m2e.jenkins.PluginDependenciesCalculator;
-import io.takari.m2e.jenkins.PluginDependenciesCalculator.DependenciesResult;
 import io.takari.m2e.jenkins.internal.JenkinsPlugin;
 import io.takari.m2e.jenkins.launcher.desc.Descriptor;
 import io.takari.m2e.jenkins.launcher.desc.PluginDesc;
+import io.takari.m2e.jenkins.plugin.IJenkinsPlugin;
+import io.takari.m2e.jenkins.plugin.JenkinsPluginProject;
+import io.takari.m2e.jenkins.plugin.PluginDependenciesCalculator;
+import io.takari.m2e.jenkins.plugin.PluginDependenciesCalculator.DependenciesResult;
 import io.takari.m2e.jenkins.runtime.JenkinsRuntimePlugin;
 import io.takari.m2e.jenkins.runtime.PluginUpdateCenter;
 
@@ -174,12 +180,35 @@ public class JenkinsLaunchConfigurationDelegate extends AbstractJavaLaunchConfig
   private List<String> getRuntimeClasspath() {
     if (CLASSPATH == null) {
       LinkedHashSet<String> allentries = new LinkedHashSet<String>();
-      Bundle runtimeBundle = Bundles.findDependencyBundle(JenkinsPlugin.getInstance().getBundle(),
-          RUNTIME_BUNDLE_SYMBOLICNAME);
+      Bundle runtimeBundle = findDependencyBundle(JenkinsPlugin.getInstance().getBundle(),
+          RUNTIME_BUNDLE_SYMBOLICNAME, new HashSet<>());
       allentries.addAll(Bundles.getClasspathEntries(runtimeBundle));
       CLASSPATH = new ArrayList<>(allentries);
     }
     return CLASSPATH;
+  }
+
+  private static Bundle findDependencyBundle(Bundle bundle, String dependencyName, Set<Bundle> visited) {
+    BundleWiring bundleWiring = bundle.adapt(BundleWiring.class);
+    if (bundleWiring == null) {
+      return null;
+    }
+    ArrayList<BundleWire> dependencies = new ArrayList<BundleWire>();
+    dependencies.addAll(bundleWiring.getRequiredWires(BundleNamespace.BUNDLE_NAMESPACE));
+    dependencies.addAll(bundleWiring.getRequiredWires(PackageNamespace.PACKAGE_NAMESPACE));
+    for (BundleWire wire : dependencies) {
+      Bundle requiredBundle = wire.getProviderWiring().getBundle();
+      if (requiredBundle != null && visited.add(requiredBundle)) {
+        if (dependencyName.equals(requiredBundle.getSymbolicName())) {
+          return requiredBundle;
+        }
+        Bundle required = findDependencyBundle(requiredBundle, dependencyName, visited);
+        if (required != null) {
+          return required;
+        }
+      }
+    }
+    return null;
   }
 
   private Descriptor createDescriptor(JenkinsLaunchConfig config, IProgressMonitor monitor) throws CoreException {

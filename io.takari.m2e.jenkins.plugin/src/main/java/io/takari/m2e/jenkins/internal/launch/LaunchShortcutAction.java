@@ -22,8 +22,8 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.IEditorPart;
 
-import io.takari.m2e.jenkins.JenkinsPluginProject;
 import io.takari.m2e.jenkins.internal.JenkinsPlugin;
+import io.takari.m2e.jenkins.plugin.JenkinsPluginProject;
 
 public class LaunchShortcutAction implements ILaunchShortcut {
 
